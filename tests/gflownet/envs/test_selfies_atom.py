@@ -477,6 +477,29 @@ def test__get_mask_invalid_actions_forward__returns_expected(
     assert mask == mask_expected
 
 
+# Adapt this test to make it reflect the expected behaviour. It seems that this is
+# correct and instead the forward mask may be wrong.
+@pytest.mark.parametrize(
+    "state, parent_unexpected, action_unexpected",
+    [
+        (
+            [0, 0, 1, 0, 0, 1],
+            [0, 0, 0, 0, 0, 1],
+            (3, 1),
+        ),
+    ],
+)
+def test__get_parents__does_not_contain_unexpected_parents(
+    env_default, state, parent_unexpected, action_unexpected
+):
+    env = env_default
+    env.set_state(state)
+    parents, parents_a = env.get_parents()
+    for p, p_a in zip(parents, parents_a):
+        assert not env.equal(p, parent_unexpected)
+        assert p_a != action_unexpected
+
+
 class TestAtomBasic(common.BaseTestsDiscrete):
     """Common tests for default Atom (organic) environment"""
 
