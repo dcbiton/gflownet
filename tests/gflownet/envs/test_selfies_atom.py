@@ -194,6 +194,16 @@ def test__get_parents__returns_expected(
             [0, 0, 1, 0, 0, 0],
         ),
         (
+            [0, 0, 1, 0, 0, 0],
+            (6, 1),  # invalid action
+            [0, 0, 1, 0, 0, 0],
+        ),
+        (
+            [0, 0, 0, 0, 0, 1],
+            (3, 1),  # invalid action
+            [0, 0, 0, 0, 0, 1],
+        ),
+        (
             [2, 0, 7, 0, 0, 0],
             (-1, -1),  # terminating action
             [2, 0, 7, 0, 0, 0],
@@ -211,6 +221,29 @@ def test__step__returns_expected(env_default, state, action, next_state):
     "state, mask_expected",
     [
         # Source state
+        (
+            [0, 0, 1, 0, 0, 0],
+            list(
+                {
+                    (1, 1): True,
+                    (1, 2): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["H"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["B"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["C"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["N"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["O"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["F"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["P"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["S"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["Cl"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["Br"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["I"]): True,
+                    (6, 1): True,
+                    (6, 2): True,
+                    (-1, -1): False,
+                }.values()
+            ),
+        ),
         (
             [0, 0, 0, 0, 0, 1],
             list(
