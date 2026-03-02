@@ -45,7 +45,7 @@ actions will be: choose a:
 (5) H count (H1, H3, etc)   [optional]
 (6) charge ([+-][1-9])      [optional] {largest is Xe+38}
 
-[CURRENT IMPLEMENTATION] Valid elements: 
+[CURRENT IMPLEMENTATION] Valid elements:
 all charged elements are valid, only bond constraints are incorporated
 If the charged_element doesn't have a bond  constraint,
 then the bond constraint is 8
@@ -339,10 +339,16 @@ class Atom(GFlowNetEnv):
         }
         # used for getting bond constraints of each element (charged or uncharged)
         self.element_to_bond_constraint = {
-            self.element_to_action_index[element]:bond_constraints[element] for element in self.action_map["element"]
+            self.element_to_action_index[element]: bond_constraints[element]
+            for element in self.action_map["element"]
         }
         self.charged_element_bond_constraints = {
-            self.element_to_action_index[element]:{i:bond_constraints[element+charge] for i, charge in enumerate(self.action_map["charge"]) if element+charge in bond_constraints.keys()} for element in self.action_map["element"]
+            self.element_to_action_index[element]: {
+                i: bond_constraints[element + charge]
+                for i, charge in enumerate(self.action_map["charge"])
+                if element + charge in bond_constraints.keys()
+            }
+            for element in self.action_map["element"]
         }
         # Base class init
         super().__init__(**kwargs)
@@ -767,27 +773,48 @@ class Atom(GFlowNetEnv):
         list
             The list of all terminating states.
         """
-        # get all the elements 
+        # get all the elements
         terminating_states = []
-        terminating_substates = [(list(range(1, self.num_actions[k] + 1)) if k == "element" else list(range(0, self.num_actions[k] + 1))) for k in self.action_map.keys()]
+        terminating_substates = [
+            (
+                list(range(1, self.num_actions[k] + 1))
+                if k == "element"
+                else list(range(0, self.num_actions[k] + 1))
+            )
+            for k in self.action_map.keys()
+        ]
         # get cartertesian product of all the optional states with any element
-        # check the bond constraints of the element with a combination with all the charges 
+        # check the bond constraints of the element with a combination with all the charges
         # if there are no bond constraints, then the bond constraint is 8
         for state_tuple in product(*terminating_substates):
             # incorporate the bond constraints
             # if (bool(charged_element_bond_constraints[state_tuple[2]-1]) and (charged_element_bond_constraints[state_tuple[2]-1].get(state_tuple[5]-1)) ) and ((state_tuple[5]!=0) and (state_tuple[0] !=0)):
-            if (self.charged_element_bond_constraints[state_tuple[2]-1].get(state_tuple[5]-1)) and ((state_tuple[5]!=0) and (state_tuple[0] !=0)):
+            if (
+                self.charged_element_bond_constraints[state_tuple[2] - 1].get(
+                    state_tuple[5] - 1
+                )
+            ) and ((state_tuple[5] != 0) and (state_tuple[0] != 0)):
                 # get the charged  constraint
-                bond_string = self.action_map["bond"][state_tuple[0]-1]
-                if self.bond_map[bond_string] <= self.charged_element_bond_constraints[state_tuple[2]-1][state_tuple[5]-1]:
+                bond_string = self.action_map["bond"][state_tuple[0] - 1]
+                if (
+                    self.bond_map[bond_string]
+                    <= self.charged_element_bond_constraints[state_tuple[2] - 1][
+                        state_tuple[5] - 1
+                    ]
+                ):
                     terminating_states.append(list(state_tuple))
-            elif bool(self.element_to_bond_constraint[state_tuple[2]-1]) and (state_tuple[0] != 0):
+            elif bool(self.element_to_bond_constraint[state_tuple[2] - 1]) and (
+                state_tuple[0] != 0
+            ):
                 # get the bond constraint
-                bond_string = self.action_map["bond"][state_tuple[0]-1]
-                if self.bond_map[bond_string] <= self.element_to_bond_constraint[state_tuple[2]-1]:
+                bond_string = self.action_map["bond"][state_tuple[0] - 1]
+                if (
+                    self.bond_map[bond_string]
+                    <= self.element_to_bond_constraint[state_tuple[2] - 1]
+                ):
                     terminating_states.append(list(state_tuple))
-            else: 
-                # append it to the terminating states 
+            else:
+                # append it to the terminating states
                 terminating_states.append(list(state_tuple))
 
         return terminating_states

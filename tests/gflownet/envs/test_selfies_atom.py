@@ -512,29 +512,27 @@ def test__get_mask_invalid_actions_forward__returns_expected(
 
 # Adapt this test to make it reflect the expected behaviour. It seems that this is
 # correct and instead the forward mask may be wrong.
-def test__get_all_terminating_states_valid(
-    env_default
-):
+def test__get_all_terminating_states_valid(env_default):
     """
     inputs:
         env_default: Atom() env
         terminating_state: state (list)
     """
-    # restart env 
+    # restart env
     env = env_default
     terminating_states = env.get_all_terminating_states()
     for terminating_state in terminating_states:
         env.set_state(terminating_state)
         # 1. check that the mask is False for the terminal
         mask = env.get_mask_invalid_actions_forward(terminating_state, done=False)
-        assert mask[-1] == False # then it is really terminating
+        assert mask[-1] == False  # then it is really terminating
         parents, parents_a = env.get_parents()
         # 2. set that the parent can take an action_expected to reach terminating_state
-        # do this to all parents 
+        # do this to all parents
         for p, p_a in zip(parents, parents_a):
             env.set_state(p)
-            valid_actions = env.get_valid_actions(done=False) 
-            # check that the action is in the valid actions 
+            valid_actions = env.get_valid_actions(done=False)
+            # check that the action is in the valid actions
             assert p_a in valid_actions
 
 
