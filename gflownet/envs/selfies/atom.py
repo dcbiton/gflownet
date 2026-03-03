@@ -764,7 +764,8 @@ class Atom(GFlowNetEnv):
         )
         return readable_state
 
-    def get_all_terminating_states(self) -> List[List[int]]:
+    # TODO: This method is work in progress and need to be tested before using them
+    def _get_all_terminating_states_wip(self) -> List[List[int]]:
         """
         Returns a list with all the terminating states in environment format.
 
@@ -819,7 +820,8 @@ class Atom(GFlowNetEnv):
 
         return terminating_states
 
-    def get_uniform_terminating_states(
+    # TODO: This method is work in progress and need to be tested before using them
+    def _get_uniform_terminating_states_wip(
         self, n_states: int, seed: int = None
     ) -> List[List[int]]:
         """
