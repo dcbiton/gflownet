@@ -1,7 +1,10 @@
+import warnings
+
 import common
 import pytest
 
 from gflownet.envs.selfies.atom import Atom
+from gflownet.utils.common import copy
 
 
 @pytest.fixture
@@ -534,6 +537,67 @@ def test__get_all_terminating_states_valid(env_default):
             valid_actions = env.get_valid_actions(done=False)
             # check that the action is in the valid actions
             assert p_a in valid_actions
+
+
+@pytest.mark.repeat(5)
+@pytest.mark.parametrize(
+    "env",
+    [
+        "env_default",
+        "env_source_readable_notdefault",
+    ],
+)
+def test__step_random__does_not_crash_from_source(env, request):
+    env = request.getfixturevalue(env)
+    env.reset()
+    state_next, action, valid = env.step_random()
+    assert True
+
+
+@pytest.mark.repeat(10)
+@pytest.mark.parametrize(
+    "env",
+    [
+        "env_default",
+        "env_source_readable_notdefault",
+    ],
+)
+def test__step_random__does_not_get_stuck_in_no_valid_actions(env, request):
+    env = request.getfixturevalue(env)
+    env.reset()
+    states = [copy(env.state)]
+    actions = []
+    while not env.done:
+        mask = env.get_mask_invalid_actions_forward()
+        if all(mask):
+            warnings.warn("IMPORTANT: Found invalid action!")
+            assert False
+        assert not all(mask)
+        state_next, action, valid = env.step_random()
+    assert True
+
+
+@pytest.mark.repeat(10)
+@pytest.mark.parametrize(
+    "env",
+    [
+        "env_default",
+        "env_source_readable_notdefault",
+    ],
+)
+def test__step_random__does_not_crash_and_reaches_done(env, request):
+    env = request.getfixturevalue(env)
+    env.reset()
+    states = [copy(env.state)]
+    actions = []
+    while not env.done:
+        state_next, action, valid = env.step_random()
+        if valid:
+            states.append(copy(state_next))
+            actions.append(action)
+        else:
+            warnings.warn("IMPORTANT: Found invalid action!")
+    assert True
 
 
 class TestAtomBasic(common.BaseTestsDiscrete):
