@@ -13,6 +13,42 @@ def env_default():
 
 
 @pytest.fixture
+def env_organic_isotope6_hcount4_charge1():
+    return Atom(
+        elements="organic",
+        allow_chiral_tag=False,
+        allow_stereoisomer=True,
+        isotope_limit=6,
+        h_count_limit=4,
+        charge_limit=1,
+    )
+
+
+@pytest.fixture
+def env_organic_single_charge():
+    return Atom(
+        elements="organic",
+        allow_chiral_tag=False,
+        allow_stereoisomer=False,
+        isotope_limit=0,
+        h_count_limit=0,
+        charge_limit=1,
+    )
+
+
+@pytest.fixture
+def env_organic_charge4():
+    return Atom(
+        elements="organic",
+        allow_chiral_tag=False,
+        allow_stereoisomer=False,
+        isotope_limit=0,
+        h_count_limit=0,
+        charge_limit=4,
+    )
+
+
+@pytest.fixture
 def env_source_readable_notdefault():
     return Atom(source_readable="<source-test>")
 
@@ -67,42 +103,45 @@ DEFAULT_BONDS = {"=": 1, "#": 2}
 
 # states are the indices of the atoms
 @pytest.mark.parametrize(
-    "action_space",
+    "env, action_space",
     [
-        [
-            (1, 1),
-            (1, 2),
-            (1, 3),
-            (1, 4),
-            (2, 1),
-            (2, 2),
-            (2, 3),
-            (2, 4),
-            (2, 5),
-            (2, 6),
-            (3, 1),
-            (3, 2),
-            (3, 3),
-            (3, 4),
-            (3, 5),
-            (3, 6),
-            (3, 7),
-            (3, 8),
-            (3, 9),
-            (3, 10),
-            (3, 11),
-            (5, 1),
-            (5, 2),
-            (5, 3),
-            (5, 4),
-            (6, 1),
-            (6, 2),
-            (-1, -1),
-        ],
+        (
+            "env_organic_single_charge",
+            [
+                (1, 1),
+                (1, 2),
+                (1, 3),
+                (1, 4),
+                (2, 1),
+                (2, 2),
+                (2, 3),
+                (2, 4),
+                (2, 5),
+                (2, 6),
+                (3, 1),
+                (3, 2),
+                (3, 3),
+                (3, 4),
+                (3, 5),
+                (3, 6),
+                (3, 7),
+                (3, 8),
+                (3, 9),
+                (3, 10),
+                (3, 11),
+                (5, 1),
+                (5, 2),
+                (5, 3),
+                (5, 4),
+                (6, 1),
+                (6, 2),
+                (-1, -1),
+            ],
+        )
     ],
 )
-def test__get_action_space__returns_expected(env_default, action_space):
-    env = env_default
+def test__get_action_space__returns_expected(env, action_space, request):
+    env = request.getfixturevalue(env)
     assert set(action_space) == set(env.action_space)
 
 
@@ -160,9 +199,9 @@ def test__get_action_space__returns_expected(env_default, action_space):
     ],
 )
 def test__get_parents__returns_expected(
-    env_default, state, parents_exp, parent_actions_exp
+    env_organic_single_charge, state, parents_exp, parent_actions_exp
 ):
-    env = env_default
+    env = env_organic_single_charge
 
     parents, parent_actions = env.get_parents(state)
 
@@ -213,10 +252,11 @@ def test__get_parents__returns_expected(
         ),
     ],
 )
-def test__step__returns_expected(env_default, state, action, next_state):
-    env_default.set_state(state)
-    env_default.step(action)
-    assert env_default.state == next_state
+def test__step__returns_expected(env_organic_single_charge, state, action, next_state):
+    env = env_organic_single_charge
+    env.set_state(state)
+    env.step(action)
+    assert env.state == next_state
 
 
 # tests for masks
@@ -504,12 +544,13 @@ def test__step__returns_expected(env_default, state, action, next_state):
     ],
 )
 def test__get_mask_invalid_actions_forward__returns_expected(
-    env_default, state, mask_expected
+    env_organic_single_charge, state, mask_expected
 ):
-    mask = env_default.get_mask_invalid_actions_forward(state, done=False)
+    env = env_organic_single_charge
+    mask = env.get_mask_invalid_actions_forward(state, done=False)
     assert mask == mask_expected
-    env_default.set_state(state)
-    mask = env_default.get_mask_invalid_actions_forward()
+    env.set_state(state)
+    mask = env.get_mask_invalid_actions_forward()
     assert mask == mask_expected
 
 
@@ -546,6 +587,8 @@ def test__get_all_terminating_states_valid(env_default):
     [
         "env_default",
         "env_source_readable_notdefault",
+        "env_organic_single_charge",
+        "env_organic_isotope6_hcount4_charge1",
     ],
 )
 def test__step_random__does_not_crash_from_source(env, request):
@@ -561,6 +604,8 @@ def test__step_random__does_not_crash_from_source(env, request):
     [
         "env_default",
         "env_source_readable_notdefault",
+        "env_organic_single_charge",
+        "env_organic_isotope6_hcount4_charge1",
     ],
 )
 def test__step_random__does_not_get_stuck_in_no_valid_actions(env, request):
@@ -584,6 +629,8 @@ def test__step_random__does_not_get_stuck_in_no_valid_actions(env, request):
     [
         "env_default",
         "env_source_readable_notdefault",
+        "env_organic_single_charge",
+        "env_organic_isotope6_hcount4_charge1",
     ],
 )
 def test__step_random__does_not_crash_and_reaches_done(env, request):
@@ -601,12 +648,92 @@ def test__step_random__does_not_crash_and_reaches_done(env, request):
     assert True
 
 
+# TestAtomBasic
+# TestAtomOrganicCharge4
+# TestAtomOrganicSingleCharge
+
+
 class TestAtomBasic(common.BaseTestsDiscrete):
     """Common tests for default Atom (organic) environment"""
 
     @pytest.fixture(autouse=True)
     def setup(self, env_default):
         self.env = env_default
+        self.repeats = {
+            "test__reset__state_is_source": 10,
+            "test__forward_actions_have_nonzero_backward_prob": 10,
+            "test__backward_actions_have_nonzero_forward_prob": 10,
+            "test__trajectories_are_reversible": 10,
+            "test__step_random__does_not_sample_invalid_actions_forward": 10,
+            "test__step_random__does_not_sample_invalid_actions_backward": 10,
+            "test__sample_actions__get_logprobs__return_valid_actions_and_logprobs": 10,
+            "test__get_parents_step_get_mask__are_compatible": 10,
+            "test__state2readable__is_reversible": 10,
+        }
+        self.n_states = {
+            "test__get_logprobs__all_finite_in_random_forward_transitions": 10,
+            "test__get_logprobs__all_finite_in_random_backward_transitions": 10,
+        }
+        self.batch_size = {
+            "test__sample_actions__get_logprobs__batched_forward_trajectories": 10,
+            "test__sample_actions__get_logprobs__batched_backward_trajectories": 10,
+            "test__get_logprobs__all_finite_in_accumulated_forward_trajectories": 10,
+        }
+
+
+class TestAtomOrganicSingleCharge(common.BaseTestsDiscrete):
+    """
+    Common tests for default Atom (organic) environment
+    parameter values:
+        elements = "organic"
+        allow_chiral_tag = False
+        allow_stereoisomer = False
+        isotope_limit = 0
+        h_count_limit = 0
+        charge_limit = 1
+    """
+
+    @pytest.fixture(autouse=True)
+    def setup(self, env_organic_single_charge):
+        self.env = env_organic_single_charge
+        self.repeats = {
+            "test__reset__state_is_source": 10,
+            "test__forward_actions_have_nonzero_backward_prob": 10,
+            "test__backward_actions_have_nonzero_forward_prob": 10,
+            "test__trajectories_are_reversible": 10,
+            "test__step_random__does_not_sample_invalid_actions_forward": 10,
+            "test__step_random__does_not_sample_invalid_actions_backward": 10,
+            "test__sample_actions__get_logprobs__return_valid_actions_and_logprobs": 10,
+            "test__get_parents_step_get_mask__are_compatible": 10,
+            "test__state2readable__is_reversible": 10,
+        }
+        self.n_states = {
+            "test__get_logprobs__all_finite_in_random_forward_transitions": 10,
+            "test__get_logprobs__all_finite_in_random_backward_transitions": 10,
+        }
+        self.batch_size = {
+            "test__sample_actions__get_logprobs__batched_forward_trajectories": 10,
+            "test__sample_actions__get_logprobs__batched_backward_trajectories": 10,
+            "test__get_logprobs__all_finite_in_accumulated_forward_trajectories": 10,
+        }
+
+
+class TestAtomOrganicCharge4(common.BaseTestsDiscrete):
+    """
+    Common tests for Atom (organic) environment
+    with env_organic_charge4 environment
+    parameters:
+        elements = "organic"
+        allow_chiral_tag = False
+        allow_stereoisomer = False
+        isotope_limit = 0
+        h_count_limit = 0
+        charge_limit = 4
+    """
+
+    @pytest.fixture(autouse=True)
+    def setup(self, env_organic_charge4):
+        self.env = env_organic_charge4
         self.repeats = {
             "test__reset__state_is_source": 10,
             "test__forward_actions_have_nonzero_backward_prob": 10,
