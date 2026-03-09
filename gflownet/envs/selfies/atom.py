@@ -517,9 +517,10 @@ class Atom(GFlowNetEnv):
                 if state[0] > 0
                 else 0
             )
-            # invalid elements are those with bond contraints smaller than the chosen bond number
+            # invalid elements are elements with bond contraints smaller than the chosen bond number
             invalid_elements = [
                 element
+                # elements are not in bond_constraints will never be filtered out
                 for element, bond in bond_constraints.items()
                 if ((bond < bond_number) and (not re.compile(r"[+-?]").search(element)))
             ]
@@ -556,19 +557,26 @@ class Atom(GFlowNetEnv):
                 # since there is already a charge, loop through all the elements and check the bond constraint
                 # chosen bond
                 bond_number = self.bond_map[self.action_map["bond"][state[0] - 1]]
-                valid_elements = [
+                invalid_elements = [
                     element.replace(atom_charge_str, "")
+                    # elements are not in bond_constraints will NEVER be filtered out
                     for element, bond in bond_constraints.items()
                     if (
-                        (bond >= bond_number)  # inclusive
-                        and (atom_charge_str in element)
+                        (
+                            (bond < bond_number)  # inclusive
+                            and (atom_charge_str in element)
+                        )
+                        or (
+                            (bond < bond_number)
+                            and (
+                                element + atom_charge_str not in bond_constraints.keys()
+                            )
+                        )
                     )
                 ]
                 # filter-out the elements from the possible actions
-                mask_length = self.num_actions["element"]
-                mask[mask_start : mask_start + mask_length] = [True] * mask_length
-                for x in valid_elements:
-                    mask[mask_start + self.element_to_action_index[x]] = False
+                for x in invalid_elements:
+                    mask[mask_start + self.element_to_action_index[x]] = True
 
         return mask
 

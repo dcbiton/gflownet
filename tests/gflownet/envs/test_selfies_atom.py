@@ -261,10 +261,101 @@ def test__step__returns_expected(env_organic_single_charge, state, action, next_
 
 # tests for masks
 @pytest.mark.parametrize(
-    "state, mask_expected",
+    "env, state, mask_expected",
     [
         # Source state
+        # (
+        #     "env_organic_charge4",
+        #     [2, 0, 0, 0, 0, 0],
+        #     list(
+        #         {
+        #             (1, 1): True,
+        #             (1, 2): True,
+        #             (3, DEFAULT_ORGANIC_ELEMENTS["H"]): True,
+        #             (3, DEFAULT_ORGANIC_ELEMENTS["B"]): False,
+        #             (3, DEFAULT_ORGANIC_ELEMENTS["C"]): False,
+        #             (3, DEFAULT_ORGANIC_ELEMENTS["N"]): False,
+        #             (3, DEFAULT_ORGANIC_ELEMENTS["O"]): False,
+        #             (3, DEFAULT_ORGANIC_ELEMENTS["F"]): True,
+        #             (3, DEFAULT_ORGANIC_ELEMENTS["P"]): False,
+        #             (3, DEFAULT_ORGANIC_ELEMENTS["S"]): False,
+        #             (3, DEFAULT_ORGANIC_ELEMENTS["Cl"]): True,
+        #             (3, DEFAULT_ORGANIC_ELEMENTS["Br"]): False,
+        #             (3, DEFAULT_ORGANIC_ELEMENTS["I"]): True,
+        #             (6, 1): True,
+        #             (6, 2): True,
+        #             (6, 3): True,
+        #             (6, 4): False,
+        #             (6, 5): False,
+        #             (6, 6): True,
+        #             (6, 7): True,
+        #             (6, 8): True,
+        #             (-1, -1): True,
+        #         }.values()
+        #     ),
+        # ),
         (
+            "env_organic_charge4",
+            [0, 0, 0, 0, 0, 6],
+            list(
+                {
+                    (1, 1): False,
+                    (1, 2): False,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["H"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["B"]): False,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["C"]): False,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["N"]): False,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["O"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["F"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["P"]): False,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["S"]): False,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["Cl"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["Br"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["I"]): True,
+                    (6, 1): True,
+                    (6, 2): True,
+                    (6, 3): True,
+                    (6, 4): True,
+                    (6, 5): True,
+                    (6, 6): True,
+                    (6, 7): True,
+                    (6, 8): True,
+                    (-1, -1): True,
+                }.values()
+            ),
+        ),
+        (
+            "env_organic_charge4",
+            [0, 0, 0, 0, 0, 0],
+            list(
+                {
+                    (1, 1): False,
+                    (1, 2): False,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["H"]): False,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["B"]): False,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["C"]): False,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["N"]): False,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["O"]): False,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["F"]): False,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["P"]): False,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["S"]): False,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["Cl"]): False,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["Br"]): False,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["I"]): False,
+                    (6, 1): False,
+                    (6, 2): False,
+                    (6, 3): False,
+                    (6, 4): False,
+                    (6, 5): False,
+                    (6, 6): False,
+                    (6, 7): False,
+                    (6, 8): False,
+                    (-1, -1): True,
+                }.values()
+            ),
+        ),
+        (
+            "env_organic_single_charge",
             [0, 0, 1, 0, 0, 0],
             list(
                 {
@@ -288,6 +379,7 @@ def test__step__returns_expected(env_organic_single_charge, state, action, next_
             ),
         ),
         (
+            "env_organic_single_charge",
             [0, 0, 0, 0, 0, 1],
             list(
                 {
@@ -311,6 +403,7 @@ def test__step__returns_expected(env_organic_single_charge, state, action, next_
             ),
         ),
         (
+            "env_organic_single_charge",
             [0, 0, 0, 0, 0, 2],
             list(
                 {
@@ -334,6 +427,7 @@ def test__step__returns_expected(env_organic_single_charge, state, action, next_
             ),
         ),
         (
+            "env_organic_single_charge",
             [0, 0, 1, 0, 0, 0],
             list(
                 {
@@ -357,6 +451,7 @@ def test__step__returns_expected(env_organic_single_charge, state, action, next_
             ),
         ),
         (
+            "env_organic_single_charge",
             [1, 0, 0, 0, 0, 1],
             list(
                 {
@@ -380,6 +475,7 @@ def test__step__returns_expected(env_organic_single_charge, state, action, next_
             ),
         ),
         (
+            "env_organic_single_charge",
             [DEFAULT_BONDS["="], 0, 0, 0, 0, DEFAULT_CHARGES["+1"]],
             list(
                 {
@@ -403,6 +499,7 @@ def test__step__returns_expected(env_organic_single_charge, state, action, next_
             ),
         ),
         (
+            "env_organic_single_charge",
             [0, 0, 0, 0, 0, 0],
             list(
                 {
@@ -427,6 +524,7 @@ def test__step__returns_expected(env_organic_single_charge, state, action, next_
         ),
         # # Option selected
         (
+            "env_organic_single_charge",
             [0, 0, DEFAULT_ORGANIC_ELEMENTS["B"], 0, 0, DEFAULT_CHARGES["-1"]],
             list(
                 {
@@ -450,6 +548,7 @@ def test__step__returns_expected(env_organic_single_charge, state, action, next_
             ),
         ),
         (
+            "env_organic_single_charge",
             [0, 0, DEFAULT_ORGANIC_ELEMENTS["B"], 0, 0, DEFAULT_CHARGES["+1"]],
             list(
                 {
@@ -473,6 +572,7 @@ def test__step__returns_expected(env_organic_single_charge, state, action, next_
             ),
         ),
         (
+            "env_organic_single_charge",
             [0, 0, DEFAULT_ORGANIC_ELEMENTS["B"], 0, 0, 0],
             list(
                 {
@@ -496,6 +596,7 @@ def test__step__returns_expected(env_organic_single_charge, state, action, next_
             ),
         ),
         (
+            "env_organic_single_charge",
             [DEFAULT_BONDS["="], 0, DEFAULT_ORGANIC_ELEMENTS["B"], 0, 0, 0],
             list(
                 {
@@ -519,6 +620,7 @@ def test__step__returns_expected(env_organic_single_charge, state, action, next_
             ),
         ),
         (
+            "env_organic_single_charge",
             [DEFAULT_BONDS["#"], 0, DEFAULT_ORGANIC_ELEMENTS["B"], 0, 0, 0],
             list(
                 {
@@ -544,9 +646,9 @@ def test__step__returns_expected(env_organic_single_charge, state, action, next_
     ],
 )
 def test__get_mask_invalid_actions_forward__returns_expected(
-    env_organic_single_charge, state, mask_expected
+    env, state, mask_expected, request
 ):
-    env = env_organic_single_charge
+    env = request.getfixturevalue(env)
     mask = env.get_mask_invalid_actions_forward(state, done=False)
     assert mask == mask_expected
     env.set_state(state)
@@ -589,6 +691,7 @@ def test__get_all_terminating_states_valid(env_default):
         "env_source_readable_notdefault",
         "env_organic_single_charge",
         "env_organic_isotope6_hcount4_charge1",
+        "env_organic_charge4",
     ],
 )
 def test__step_random__does_not_crash_from_source(env, request):
@@ -606,6 +709,7 @@ def test__step_random__does_not_crash_from_source(env, request):
         "env_source_readable_notdefault",
         "env_organic_single_charge",
         "env_organic_isotope6_hcount4_charge1",
+        "env_organic_charge4",
     ],
 )
 def test__step_random__does_not_get_stuck_in_no_valid_actions(env, request):
@@ -617,9 +721,15 @@ def test__step_random__does_not_get_stuck_in_no_valid_actions(env, request):
         mask = env.get_mask_invalid_actions_forward()
         if all(mask):
             warnings.warn("IMPORTANT: Found invalid action!")
+            import pdb
+
+            pdb.set_trace()
             assert False
         assert not all(mask)
         state_next, action, valid = env.step_random()
+        if valid:
+            states.append(state_next)
+            actions.append(action)
     assert True
 
 
@@ -631,6 +741,7 @@ def test__step_random__does_not_get_stuck_in_no_valid_actions(env, request):
         "env_source_readable_notdefault",
         "env_organic_single_charge",
         "env_organic_isotope6_hcount4_charge1",
+        "env_organic_charge4",
     ],
 )
 def test__step_random__does_not_crash_and_reaches_done(env, request):
