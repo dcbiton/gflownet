@@ -394,6 +394,57 @@ class Atom(GFlowNetEnv):
 
         return action_space
 
+    def _is_bond_set(self, state: List[int]) -> bool:
+        """
+        Checks if the bond is set
+        By looking at state[0]
+        If state[0] == 0 then there is no bond yet
+        else if state[0] != 0 then a bond was chosen
+        """
+        if state[0] != 0:
+            return True
+        else:
+            return False
+
+    def _is_element_set(self, state: List[int]) -> bool:
+        """
+        Checks if the element is set
+        By looking at state[2]
+        If state[2] == 0 then there is no element yet
+        else if state[2] != 0 then an element was chosen
+        """
+        if state[2] != 0:
+            return True
+        else:
+            return False
+
+    def _is_charge_set(self, state: List[int]) -> bool:
+        """
+        Checks if the charge is set
+        By looking at state[6]
+        If state[6] == 0 then there is no charge yet
+        else if state[6] != 0 then an charge was chosen
+        """
+        if state[6] != 0:
+            return True
+        else:
+            return False
+
+    # TODO:
+    def _get_valid_bonds(self, state):
+        valid_bonds = []
+        return valid_bonds
+
+    # TODO:
+    def _get_valid_elements(self, state):
+        valid_elements = []
+        return valid_elements
+
+    # TODO:
+    def _get_valid_charges(self, state):
+        valid_charges = []
+        return valid_charges
+
     def get_mask_invalid_actions_forward(
         self,
         state: Optional[List[int]] = None,
@@ -418,167 +469,27 @@ class Atom(GFlowNetEnv):
 
         # for the mask, we limit the action space based on both
         # the action_type and action_value of the action_map
+        # Determine which bonds are valid
+        if self._is_bond_set(state):
+            valid_bonds = [False] * len(self.bonds)
+        else:
+            valid_bonds = self._get_valid_bonds(state=state)
 
-        # If done is True, all actions are invalid
-        if done:
-            mask = [True] * self.action_space_dim
-            return mask
+        # Determine which elements are valid
+        if self._is_element_set(state):
+            valid_elements = [False] * len(self.elements)
+        else:
+            valid_elements = self._get_valid_elements(state=state)
 
-        if self.is_source(state):
-            # If the state is the source state, all actions of available options are valid
-            # except EOS
-            mask = [False] * (self.action_space_dim - 1) + [True]
-            return mask
+        # Determine which charges are valid
+        if self._is_charge_set(state):
+            valid_charges = [False] * len(self.charges)
+        else:
+            valid_charges = self._get_valid_charges(state=state)
 
-        # if parts of the state has a non-source/non-zero value,
-        # only EOS is valid
-        elif 0 not in state:
-            # all states are invalid except the EOS
-            mask = [True] * (self.action_space_dim - 1) + [False]
-            return mask
-
-        mask = [False] * (self.action_space_dim - 1) + [True]
-        # next if state[2] (which refers to the element) has a non-source/non-zero value,
-        # EOS is valid
-        if state[2] != 0:
-            mask[-1] = False
-            # check the atom and apply bond constraints
-
-        for action_ind, action_type in enumerate(self.action_map):
-            if state[action_ind] != 0:
-                # if the state is already filled with an action_type,
-                # actions with that action_type is masked
-                mask_start = self.cummulative_count_actions[action_type]
-                mask_length = self.num_actions[action_type]
-                mask[mask_start : mask_start + mask_length] = [True] * mask_length
-
-        # to incorporate the bond constraints, count the bond possible for each element
-        # if there is a chemical element but no bonds yet
-        # BOND:No ELEMENT:Yes CHARGE:Yes/No
-        if (state[2] != 0) and (state[0] == 0):
-
-            if state[5] != 0:
-                # if there is a charge, concatenate the element and the charge
-                element_bond_constraint = bond_constraints.get(
-                    self.action_map["element"][state[2] - 1]
-                    + self.action_map["charge"][state[5] - 1]
-                )
-            else:
-                element_bond_constraint = bond_constraints.get(
-                    self.action_map["element"][state[2] - 1]
-                )
-                if element_bond_constraint < 2:  # only organic elements are considered
-                    # if the bond_constrain = 1 then the element cannot be charged (in a molecule)
-                    # mask the charges
-                    mask_start = self.cummulative_count_actions["charge"]
-                    mask_length = self.num_actions["charge"]
-                    mask[mask_start : mask_start + mask_length] = [True] * mask_length
-            if element_bond_constraint != None:
-                # mask some of the "bond" actions based on the bond constraints
-                mask_start = (
-                    self.cummulative_count_actions["bond"]
-                    + min(3, element_bond_constraint)
-                    - 1
-                )
-                mask_length = (
-                    self.num_actions[action_type] - min(3, element_bond_constraint) + 1
-                )
-                # mask all the bonds based on the bond constraints
-                mask[mask_start : mask_start + mask_length] = [True] * mask_length
-
-        # BOND:Yes ELEMENT:Yes CHARGE:No
-        if ((state[0] != 0) and (state[2] != 0)) and (state[5] == 0):
-            # first, get the chosen bond
-            bond_number = self.bond_map[self.action_map["bond"][state[0] - 1]]
-            # for all possible charges get the bond contraint of that by concatenating
-            # if the bond constraint is less than bond in state[0] then the mask for that action is invalid
-            charge_mask = [
-                bond_number
-                > bond_constraints.get(
-                    self.action_map["element"][state[2] - 1]
-                    + self.action_map["charge"][charge_i],
-                    9,
-                )
-                for charge_i in range(0, (self.num_actions["charge"]))
-            ]
-            # apply the mask
-            mask_start = self.cummulative_count_actions["charge"]
-            mask_length = self.num_actions["charge"]
-            mask[mask_start : mask_start + mask_length] = charge_mask
-
-        # add a mask for elements after a bond is chosen
-        # if there is a bond but there is no element yet
-        # BOND:Yes/No ELEMENT:No CHARGE:No
-        if (state[2] == 0) and (state[5] == 0):
-            # filter actions for some elements
-            # first, get the bond
-            bond_number = (
-                self.bond_map[self.action_map["bond"][state[0] - 1]]
-                if state[0] > 0
-                else 0
-            )
-            # invalid elements are elements with bond contraints smaller than the chosen bond number
-            invalid_elements = [
-                element
-                # elements are not in bond_constraints will never be filtered out
-                for element, bond in bond_constraints.items()
-                if ((bond < bond_number) and (not re.compile(r"[+-?]").search(element)))
-            ]
-            mask_start = self.cummulative_count_actions["element"]
-            # loop through all the elements (Use a loop for now)
-            for x in invalid_elements:
-                mask[mask_start + self.element_to_action_index[x]] = True
-
-        # if there is no bonds and no elements but there is a change
-        # BOND:No/Yes ELEMENT:No CHARGE:Yes
-        # state[5] is charge
-        # state[0] is bond
-        # state[2] is element
-        if (state[5] != 0) and (state[2] == 0):
-            # the charge in the state
-            atom_charge_str = self.action_map["charge"][state[5] - 1]
-            atom_charge = abs(int(atom_charge_str))
-            # filter out elements
-            mask_start = self.cummulative_count_actions["element"]
-            if state[0] == 0:
-                # filter the elements with bond constraints less than the chosen charge
-                invalid_elements = [
-                    element
-                    for element, bond in bond_constraints.items()
-                    if (
-                        (bond <= atom_charge)
-                        and (not re.compile(r"[+-?]").search(element))
-                    )
-                ]
-                for x in invalid_elements:
-                    mask[mask_start + self.element_to_action_index[x]] = True
-            else:
-                # add the bond number to the bond filter
-                # since there is already a charge, loop through all the elements and check the bond constraint
-                # chosen bond
-                bond_number = self.bond_map[self.action_map["bond"][state[0] - 1]]
-                invalid_elements = [
-                    re.sub("[^a-zA-Z]+", "", element)
-                    # elements are not in bond_constraints will NEVER be filtered out
-                    for element, bond in bond_constraints.items()
-                    if (
-                        (
-                            (bond < bond_number)  # inclusive
-                            and (atom_charge_str in element)
-                        )
-                        or (
-                            (bond < bond_number)
-                            and (
-                                element + atom_charge_str not in bond_constraints.keys()
-                            )
-                        )
-                    )
-                ]
-                # filter-out the elements from the possible actions
-                for x in invalid_elements:
-                    mask[mask_start + self.element_to_action_index[x]] = True
-
-        return mask
+        # after checking everything,
+        # combine lists to create a mask for the whole action space
+        mask = valid_bonds + valid_elements + valid_charges
 
     def get_parents(
         self,
