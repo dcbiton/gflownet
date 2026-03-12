@@ -558,7 +558,7 @@ class Atom(GFlowNetEnv):
                 # chosen bond
                 bond_number = self.bond_map[self.action_map["bond"][state[0] - 1]]
                 invalid_elements = [
-                    element.replace(atom_charge_str, "")
+                    re.sub("[^a-zA-Z]+", "", element)
                     # elements are not in bond_constraints will NEVER be filtered out
                     for element, bond in bond_constraints.items()
                     if (
