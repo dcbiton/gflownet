@@ -354,8 +354,7 @@ class Atom(GFlowNetEnv):
         }
         # create max bond numbers from the initialized element
         self.max_bond_limit = max(
-            constraint
-            for constraint in self.element_to_bond_constraint.values()
+            constraint for constraint in self.element_to_bond_constraint.values()
         )
         # use a constant containing the possible oxidation states
         self.min_element_charge = {
@@ -466,14 +465,14 @@ class Atom(GFlowNetEnv):
         # (1/4) Element FILLED Charge FILLLED
         if (state[2] != 0) and (state[5] != 0):
             # if there is a charge, concatenate the element and the charge
-            element_bond_constraint = self.charged_element_bond_constraints[state[2] - 1][state[5] - 1]
+            element_bond_constraint = self.charged_element_bond_constraints[
+                state[2] - 1
+            ][state[5] - 1]
             # mask some of the "bond" actions based on the bond constraints
             mask_start = min(3, element_bond_constraint) - 1
             mask_length = num_bonds - min(3, element_bond_constraint) + 1
             # mask all the bonds based on the bond constraints
-            valid_bonds[mask_start : mask_start + mask_length] = [
-                True
-            ] * mask_length 
+            valid_bonds[mask_start : mask_start + mask_length] = [True] * mask_length
         # (2/4) Element 0 Charge FILLED
         elif (state[2] == 0) and (state[5] != 0):
             # in this part, we have a charge, so we need to check which elements CAN have that charge
@@ -483,17 +482,17 @@ class Atom(GFlowNetEnv):
             # filter the elements with charge constraints less than the chosen charge
             valid_elements = [
                 element
-                for element, charge in self.max_element_charge.items()
-                if (
-                    (charge >= atom_charge)
-                )
+                for element, atomic_num in self.elements.items()
+                if atom_charge in OXIDATION_STATES[atomic_num]
             ]
-            # from the valid elements, get the maximum bond 
-            max_bond = max([bond_constraints.get(element, 8) for element in valid_elements])
-            mask_start = min(3, max_bond) - 1 # only 2 bonds are allowed
+            # from the valid elements, get the maximum bond
+            max_bond = max(
+                [bond_constraints.get(element, 8) for element in valid_elements]
+            )
+            mask_start = min(3, max_bond) - 1  # only 2 bonds are allowed
             mask_length = num_bonds - min(3, self.max_bond_limit) + 1
             # mask all the bonds based on the bond constraints
-            valid_bonds[mask_start : mask_start + mask_length] = [True] * mask_length 
+            valid_bonds[mask_start : mask_start + mask_length] = [True] * mask_length
         # (3/4) Element FILLED Charge 0
         elif (state[2] != 0) and (state[5] == 0):
             element_bond_constraint = self.element_to_bond_constraint[state[2] - 1]
@@ -518,7 +517,7 @@ class Atom(GFlowNetEnv):
             mask_start = min(3, self.max_bond_limit) - 1
             mask_length = num_bonds - min(3, self.max_bond_limit) + 1
             # mask all the bonds based on the bond constraints
-            valid_bonds[mask_start : mask_start + mask_length] = [True] * mask_length 
+            valid_bonds[mask_start : mask_start + mask_length] = [True] * mask_length
         return valid_bonds
 
     # TODO:
@@ -553,13 +552,11 @@ class Atom(GFlowNetEnv):
             # the charge in the state
             atom_charge_str = self.action_map["charge"][state[5] - 1]
             atom_charge = abs(int(atom_charge_str))
-            # filter the elements with bond constraints less than the chosen charge
+            # filter the elements with charge constraints less than the chosen charge
             invalid_elements = [
                 element
-                for element, bond in bond_constraints.items()
-                if (
-                    (bond <= atom_charge) and (not re.compile(r"[+-?]").search(element))
-                )
+                for element, atomic_num in self.elements.items()
+                if atom_charge not in OXIDATION_STATES[atomic_num]
             ]
             for x in invalid_elements:
                 valid_elements[self.element_to_action_index[x]] = True
