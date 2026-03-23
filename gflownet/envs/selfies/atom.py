@@ -339,15 +339,16 @@ class Atom(GFlowNetEnv):
             for j, action_type in enumerate(self.num_actions)
         }
         # used for getting bond constraints of each element (charged or uncharged)
+        # default constraint is 8
         self.element_to_bond_constraint = {
-            self.element_to_action_index[element]: bond_constraints[element]
+            self.element_to_action_index[element]: bond_constraints.get(element, 8)
             for element in self.action_map["element"]
         }
+        # default constraint is 8
         self.charged_element_bond_constraints = {
             self.element_to_action_index[element]: {
-                i: bond_constraints[element + charge]
+                i: bond_constraints.get(element + charge, 8)
                 for i, charge in enumerate(self.action_map["charge"])
-                if element + charge in bond_constraints.keys()
             }
             for element in self.action_map["element"]
         }
@@ -355,7 +356,6 @@ class Atom(GFlowNetEnv):
         self.max_bond_limit = max(
             constraint
             for constraint in self.element_to_bond_constraint.values()
-            if constraint is not None
         )
         # use a constant containing the possible oxidation states
         self.min_element_charge = {
@@ -450,7 +450,6 @@ class Atom(GFlowNetEnv):
         else:
             return False
 
-    # TODO:
     def _get_valid_bonds(self, state):
         """
         Create a mask for bonds
@@ -467,31 +466,42 @@ class Atom(GFlowNetEnv):
         # (1/4) Element FILLED Charge FILLLED
         if (state[2] != 0) and (state[5] != 0):
             # if there is a charge, concatenate the element and the charge
-            element_bond_constraint = bond_constraints.get(
-                self.action_map["element"][state[2] - 1]
-                + self.action_map["charge"][state[5] - 1]
-            )
-            if element_bond_constraint != None:
-                # mask some of the "bond" actions based on the bond constraints
-                mask_start = min(3, element_bond_constraint) - 1
-                mask_length = num_bonds - min(3, element_bond_constraint) + 1
-                # mask all the bonds based on the bond constraints
-                valid_bonds[mask_start : mask_start + mask_length] = [
-                    True
-                ] * mask_length
+            element_bond_constraint = self.charged_element_bond_constraints[state[2] - 1][state[5] - 1]
+            # mask some of the "bond" actions based on the bond constraints
+            mask_start = min(3, element_bond_constraint) - 1
+            mask_length = num_bonds - min(3, element_bond_constraint) + 1
+            # mask all the bonds based on the bond constraints
+            valid_bonds[mask_start : mask_start + mask_length] = [
+                True
+            ] * mask_length 
         # (2/4) Element 0 Charge FILLED
         elif (state[2] == 0) and (state[5] != 0):
-            valid_bonds = ALL
+            # in this part, we have a charge, so we need to check which elements CAN have that charge
+            # the charge in the state
+            atom_charge_str = self.action_map["charge"][state[5] - 1]
+            atom_charge = abs(int(atom_charge_str))
+            # filter the elements with charge constraints less than the chosen charge
+            valid_elements = [
+                element
+                for element, charge in self.max_element_charge.items()
+                if (
+                    (charge >= atom_charge)
+                )
+            ]
+            # from the valid elements, get the maximum bond 
+            max_bond = max([bond_constraints.get(element, 8) for element in valid_elements])
+            mask_start = min(3, max_bond) - 1 # only 2 bonds are allowed
+            mask_length = num_bonds - min(3, self.max_bond_limit) + 1
+            # mask all the bonds based on the bond constraints
+            valid_bonds[mask_start : mask_start + mask_length] = [True] * mask_length 
         # (3/4) Element FILLED Charge 0
         elif (state[2] != 0) and (state[5] == 0):
-            element_bond_constraint = bond_constraints.get(
-                self.action_map["element"][state[2] - 1]
-            )
+            element_bond_constraint = self.element_to_bond_constraint[state[2] - 1]
             if element_bond_constraint < 2:  # only organic elements are considered
                 # if the bond_constrain = 1 then the element cannot be  (in a molecule)
                 # mask the charges
                 valid_bonds = [True] * num_bonds
-            elif element_bond_constraint != None:
+            else:
                 # mask some of the "bond" actions based on the bond constraints
                 mask_start = min(3, element_bond_constraint) - 1
                 mask_length = num_bonds - min(3, element_bond_constraint) + 1
@@ -499,12 +509,16 @@ class Atom(GFlowNetEnv):
                 valid_bonds[mask_start : mask_start + mask_length] = [
                     True
                 ] * mask_length
-            # else stick to default
         # (4/4) Element 0 Charge 0
         else:
             # since there are no element and charge yet
             # we can check maximum bond possible from the environment elements
-            valid_bonds = [True] * num_bonds
+            # which is the default
+            # as a default: we can check all valid bonds based on the environment elements
+            mask_start = min(3, self.max_bond_limit) - 1
+            mask_length = num_bonds - min(3, self.max_bond_limit) + 1
+            # mask all the bonds based on the bond constraints
+            valid_bonds[mask_start : mask_start + mask_length] = [True] * mask_length 
         return valid_bonds
 
     # TODO:
@@ -535,7 +549,7 @@ class Atom(GFlowNetEnv):
             for x in invalid_elements:
                 valid_elements[self.element_to_action_index[x]] = True
         # (2/4) Bond 0 Charge FILLED
-        if (state[0] == 0) and (state[5] != 0):  # DONE
+        elif (state[0] == 0) and (state[5] != 0):  # DONE
             # the charge in the state
             atom_charge_str = self.action_map["charge"][state[5] - 1]
             atom_charge = abs(int(atom_charge_str))
@@ -571,6 +585,7 @@ class Atom(GFlowNetEnv):
                 valid_elements[self.element_to_action_index[x]] = True
         # (4/4) Bond 0 Charge 0
         else:
+            # no filter so use the default
             pass
         return valid_elements
 
