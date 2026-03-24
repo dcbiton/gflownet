@@ -556,7 +556,7 @@ class Atom(GFlowNetEnv):
             invalid_elements = [
                 element
                 for element, atomic_num in self.elements.items()
-                if abs(atom_charge)+1 not in OXIDATION_STATES[atomic_num]
+                if abs(atom_charge) + 1 not in OXIDATION_STATES[atomic_num]
             ]
             for x in invalid_elements:
                 valid_elements[self.element_to_action_index[x]] = True
@@ -677,13 +677,13 @@ class Atom(GFlowNetEnv):
         num_bonds = self.num_actions["bond"]
         num_elements = self.num_actions["element"]
         num_charges = self.num_actions["charge"]
-        # create a default mask for the other actions 
+        # create a default mask for the other actions
         num_isotope_number = self.num_actions["isotope_number"]
-        valid_isotopes = [True]*num_isotope_number
+        valid_isotopes = [True] * num_isotope_number
         num_chiral_tag = self.num_actions["chiral_tag"]
-        valid_chiral_tag = [True]*num_chiral_tag
+        valid_chiral_tag = [True] * num_chiral_tag
         num_h_count = self.num_actions["h_count"]
-        valid_h_count = [True]*num_h_count
+        valid_h_count = [True] * num_h_count
 
         # for the mask, we limit the action space based on both
         # the action_type and action_value of the action_map
@@ -709,8 +709,16 @@ class Atom(GFlowNetEnv):
 
         # after checking everything,
         # combine lists to create a mask for the whole action space
-        mask = valid_bonds + valid_isotopes + valid_elements + valid_chiral_tag + valid_h_count + valid_charges + terminal_mask
-        
+        mask = (
+            valid_bonds
+            + valid_isotopes
+            + valid_elements
+            + valid_chiral_tag
+            + valid_h_count
+            + valid_charges
+            + terminal_mask
+        )
+
         return mask
 
     def get_parents(

@@ -241,7 +241,7 @@ def test__get_parents__returns_expected(
             [0, 0, 1, 0, 0, 0],
         ),
         (
-            [0, 0, 0, 0, 0, 1],   #failed
+            [0, 0, 0, 0, 0, 1],  # failed
             (3, 1),  # invalid action
             [0, 0, 0, 0, 0, 1],
         ),
