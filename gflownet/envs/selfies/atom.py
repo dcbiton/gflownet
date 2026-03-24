@@ -358,14 +358,12 @@ class Atom(GFlowNetEnv):
         )
         # use a constant containing the possible oxidation states
         self.min_element_charge = {
-            element: min(charges)
+            element: min(OXIDATION_STATES[atomic_num])
             for element, atomic_num in self.elements.items()
-            for charges in OXIDATION_STATES[atomic_num]
         }
         self.max_element_charge = {
-            element: max(charges)
+            element: max(OXIDATION_STATES[atomic_num])
             for element, atomic_num in self.elements.items()
-            for charges in OXIDATION_STATES[atomic_num]
         }
         self.min_charge = min([self.min_element_charge.values()])
         self.max_charge = max([self.max_element_charge.values()])
@@ -441,10 +439,10 @@ class Atom(GFlowNetEnv):
         """
         Checks if the charge is set
         By looking at state[6]
-        If state[6] == 0 then there is no charge yet
-        else if state[6] != 0 then an charge was chosen
+        If state[5] == 0 then there is no charge yet
+        else if state[5] != 0 then an charge was chosen
         """
-        if state[6] != 0:
+        if state[5] != 0:
             return True
         else:
             return False
@@ -532,6 +530,8 @@ class Atom(GFlowNetEnv):
             # since there is already a charge, loop through all the elements and check the bond constraint
             # chosen bond
             bond_number = self.bond_map[self.action_map["bond"][state[0] - 1]]
+            # the charge in the state
+            atom_charge_str = self.action_map["charge"][state[5] - 1]
             invalid_elements = [
                 re.sub("[^a-zA-Z]+", "", element)
                 # elements are not in bond_constraints will NEVER be filtered out
@@ -556,7 +556,7 @@ class Atom(GFlowNetEnv):
             invalid_elements = [
                 element
                 for element, atomic_num in self.elements.items()
-                if atom_charge not in OXIDATION_STATES[atomic_num]
+                if abs(atom_charge)+1 not in OXIDATION_STATES[atomic_num]
             ]
             for x in invalid_elements:
                 valid_elements[self.element_to_action_index[x]] = True
@@ -638,10 +638,10 @@ class Atom(GFlowNetEnv):
             )
             # get the maximum and minimum charge based on the oxidation states of the elements
             min_charge = min(
-                [self.min_element_charge.items()[element] for element in valid_elements]
+                [self.min_element_charge[element] for element in valid_elements]
             )
             max_charge = max(
-                [self.max_element_charge.items()[element] for element in valid_elements]
+                [self.max_element_charge[element] for element in valid_elements]
             )
             valid_charges = [
                 min_charge <= int(charge) <= max_charge
@@ -676,32 +676,41 @@ class Atom(GFlowNetEnv):
 
         num_bonds = self.num_actions["bond"]
         num_elements = self.num_actions["element"]
-        num_charges = self.num_actions["charges"]
+        num_charges = self.num_actions["charge"]
+        # create a default mask for the other actions 
+        num_isotope_number = self.num_actions["isotope_number"]
+        valid_isotopes = [True]*num_isotope_number
+        num_chiral_tag = self.num_actions["chiral_tag"]
+        valid_chiral_tag = [True]*num_chiral_tag
+        num_h_count = self.num_actions["h_count"]
+        valid_h_count = [True]*num_h_count
 
         # for the mask, we limit the action space based on both
         # the action_type and action_value of the action_map
         # Determine which bonds are valid
         if self._is_bond_set(state):
-            valid_bonds = [False] * num_bonds
+            valid_bonds = [True] * num_bonds
         else:
             valid_bonds = self._get_valid_bonds(state=state)
 
         # Determine which elements are valid
         if self._is_element_set(state):
-            valid_elements = [False] * num_elements
+            valid_elements = [True] * num_elements
+            terminal_mask = [False]
         else:
             valid_elements = self._get_valid_elements(state=state)
+            terminal_mask = [True]
 
         # Determine which charges are valid
         if self._is_charge_set(state):
-            valid_charges = [False] * num_charges
+            valid_charges = [True] * num_charges
         else:
             valid_charges = self._get_valid_charges(state=state)
 
         # after checking everything,
         # combine lists to create a mask for the whole action space
-        mask = valid_bonds + valid_elements + valid_charges
-
+        mask = valid_bonds + valid_isotopes + valid_elements + valid_chiral_tag + valid_h_count + valid_charges + terminal_mask
+        
         return mask
 
     def get_parents(
