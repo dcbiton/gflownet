@@ -883,6 +883,12 @@ class BaseTestsDiscrete(BaseTestsCommon):
                 assert len(parents) == len(parents_a)
                 for p, p_a in zip(parents, parents_a):
                     mask = self.env.get_mask_invalid_actions_forward(p, False)
+                    if self.env.action2representative(
+                        p_a
+                    ) not in self.env.get_valid_actions(mask, p, False):
+                        import pdb
+
+                        pdb.set_trace()
                     assert self.env.action2representative(
                         p_a
                     ) in self.env.get_valid_actions(mask, p, False)
