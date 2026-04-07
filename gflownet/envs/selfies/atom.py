@@ -321,7 +321,6 @@ class Atom(GFlowNetEnv):
                 raise ValueError(
                     f'Provided elements must be list, int, or str("organic", "all")'
                 )
-
         # here, we process the additional allowed charges
         # (note that all elements can be uncharged)
         self.allowed_charges = default_charges
@@ -332,11 +331,9 @@ class Atom(GFlowNetEnv):
                 self.allowed_charges[element] = sorted(
                     set(self.allowed_charges[element] + charges)
                 )
-
         if additional_bond_constraints:
             for element, charges in additional_bond_constraints.items():
                 self.bond_constraints.setdefault(element, {}).update(charges)
-
         self.source_readable = source_readable
         # Source state: [bond, isotope, element, chiral_tag, H_count, charge]
         self.source = [0, 0, 0, 0, 0, 0]
@@ -640,8 +637,8 @@ class Atom(GFlowNetEnv):
                 bond_number
                 > self.bond_constraints.get(
                     self.action_map["element"][state[2] - 1], {}
-                ).get(self.action_map["charge"][charge_i], 0)
-                for charge_i in range(0, (self.num_actions["charge"]))
+                ).get(int(charge_i.replace("+", "")), 0)
+                for charge_i in self.action_map["charge"]
             ]  # False if bond number is over the bond_limit
         # (2/4) Bond 0 Element FILLED
         elif (state[0] == 0) and (state[2] != 0):
