@@ -29,9 +29,9 @@ def env_organic_single_charge():
     return Atom(
         elements="organic",
         allow_chiral_tag=False,
-        allow_stereoisomer=True,
-        isotope_limit=6,
-        h_count_limit=4,
+        allow_stereoisomer=False,
+        isotope_limit=0,
+        h_count_limit=0,
         charge_limit=1,
     )
 
@@ -106,7 +106,7 @@ DEFAULT_BONDS = {"=": 1, "#": 2}
     "env, action_space",
     [
         (
-            "env_organic_single_charge",
+            "env_organic_isotope6_hcount4_charge1",
             [
                 (1, 1),
                 (1, 2),
@@ -264,48 +264,18 @@ def test__step__returns_expected(env_organic_single_charge, state, action, next_
     "env, state, mask_expected",
     [
         # Source state
-        # (
-        #     "env_organic_charge4",
-        #     [2, 0, 0, 0, 0, 0],
-        #     list(
-        #         {
-        #             (1, 1): True,
-        #             (1, 2): True,
-        #             (3, DEFAULT_ORGANIC_ELEMENTS["H"]): True,
-        #             (3, DEFAULT_ORGANIC_ELEMENTS["B"]): False,
-        #             (3, DEFAULT_ORGANIC_ELEMENTS["C"]): False,
-        #             (3, DEFAULT_ORGANIC_ELEMENTS["N"]): False,
-        #             (3, DEFAULT_ORGANIC_ELEMENTS["O"]): False,
-        #             (3, DEFAULT_ORGANIC_ELEMENTS["F"]): True,
-        #             (3, DEFAULT_ORGANIC_ELEMENTS["P"]): False,
-        #             (3, DEFAULT_ORGANIC_ELEMENTS["S"]): False,
-        #             (3, DEFAULT_ORGANIC_ELEMENTS["Cl"]): True,
-        #             (3, DEFAULT_ORGANIC_ELEMENTS["Br"]): False,
-        #             (3, DEFAULT_ORGANIC_ELEMENTS["I"]): True,
-        #             (6, 1): True,
-        #             (6, 2): True,
-        #             (6, 3): True,
-        #             (6, 4): False,
-        #             (6, 5): False,
-        #             (6, 6): True,
-        #             (6, 7): True,
-        #             (6, 8): True,
-        #             (-1, -1): True,
-        #         }.values()
-        #     ),
-        # ),
         (
             "env_organic_charge4",
-            [0, 0, 0, 0, 0, 6],
+            [2, 0, 0, 0, 0, 0],
             list(
                 {
-                    (1, 1): False,
-                    (1, 2): False,
+                    (1, 1): True,
+                    (1, 2): True,
                     (3, DEFAULT_ORGANIC_ELEMENTS["H"]): True,
                     (3, DEFAULT_ORGANIC_ELEMENTS["B"]): False,
                     (3, DEFAULT_ORGANIC_ELEMENTS["C"]): False,
                     (3, DEFAULT_ORGANIC_ELEMENTS["N"]): False,
-                    (3, DEFAULT_ORGANIC_ELEMENTS["O"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["O"]): False,
                     (3, DEFAULT_ORGANIC_ELEMENTS["F"]): True,
                     (3, DEFAULT_ORGANIC_ELEMENTS["P"]): False,
                     (3, DEFAULT_ORGANIC_ELEMENTS["S"]): False,
@@ -315,15 +285,45 @@ def test__step__returns_expected(env_organic_single_charge, state, action, next_
                     (6, 1): True,
                     (6, 2): True,
                     (6, 3): True,
-                    (6, 4): True,
-                    (6, 5): True,
+                    (6, 4): False,
+                    (6, 5): False,
                     (6, 6): True,
                     (6, 7): True,
                     (6, 8): True,
                     (-1, -1): True,
                 }.values()
             ),
-        ),
+        ),  # <<< This is not yet passed because it needs to change #O as NOT terminal
+        (
+            "env_organic_charge4",
+            [2, 0, 5, 0, 0, 0],
+            list(
+                {
+                    (1, 1): True,
+                    (1, 2): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["H"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["B"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["C"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["N"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["O"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["F"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["P"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["S"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["Cl"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["Br"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["I"]): True,
+                    (6, 1): True,
+                    (6, 2): True,
+                    (6, 3): True,
+                    (6, 4): True,
+                    (6, 5): False,
+                    (6, 6): True,
+                    (6, 7): True,
+                    (6, 8): True,
+                    (-1, -1): True,
+                }.values()
+            ),
+        ),  # <<< This is not yet passed because it needs to change #O as NOT terminal
         (
             "env_organic_charge4",
             [0, 0, 0, 0, 0, 0],
@@ -342,14 +342,14 @@ def test__step__returns_expected(env_organic_single_charge, state, action, next_
                     (3, DEFAULT_ORGANIC_ELEMENTS["Cl"]): False,
                     (3, DEFAULT_ORGANIC_ELEMENTS["Br"]): False,
                     (3, DEFAULT_ORGANIC_ELEMENTS["I"]): False,
-                    (6, 1): False,
-                    (6, 2): False,
-                    (6, 3): False,
+                    (6, 1): True,
+                    (6, 2): True,
+                    (6, 3): True,
                     (6, 4): False,
                     (6, 5): False,
-                    (6, 6): False,
-                    (6, 7): False,
-                    (6, 8): False,
+                    (6, 6): True,
+                    (6, 7): True,
+                    (6, 8): True,
                     (-1, -1): True,
                 }.values()
             ),
@@ -522,7 +522,7 @@ def test__step__returns_expected(env_organic_single_charge, state, action, next_
                 }.values()
             ),
         ),
-        # # Option selected
+        # Option selected
         (
             "env_organic_single_charge",
             [0, 0, DEFAULT_ORGANIC_ELEMENTS["B"], 0, 0, DEFAULT_CHARGES["-1"]],

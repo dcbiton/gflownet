@@ -399,14 +399,14 @@ class Atom(GFlowNetEnv):
             max(bond_limits.values()) for bond_limits in self.bond_constraints.values()
         )
 
-        self.all_charges = [
+        self.all_charges = list(
             set(
-                int(charge_i.replace("+", "")) in self.allowed_charges[elements]
-                for elements in self.action_map["element"]
+                charge_i
                 for charge_i in self.action_map["charge"]
+                for elements in self.action_map["element"]
+                if int(charge_i.replace("+", "")) in self.allowed_charges[elements]
             )
-        ]
-
+        )
         # Base class init
         super().__init__(**kwargs)
 
@@ -563,7 +563,7 @@ class Atom(GFlowNetEnv):
     def _get_valid_elements(self, state):
         # get number of actions corresponding to elements
         num_elements = self.num_actions["element"]
-        valid_elements = [False] * num_elements
+        masked_elements = [False] * num_elements
         # for elements, we need to check Bond and Charge
         # (1/4) Bond FILLED Charge FILLED
         if (state[0] != 0) and (state[5] != 0):  # DONE
@@ -578,11 +578,11 @@ class Atom(GFlowNetEnv):
                 element
                 # elements are not in bond_constraints will NEVER be filtered out
                 for element, bond_limit_map in self.bond_constraints.items()
-                if bond_limit_map.get(atom_charge, 8) < bond_number
+                if bond_limit_map.get(atom_charge, 0) < bond_number
             ]
             # filter-out the elements from the possible actions
             for x in invalid_elements:
-                valid_elements[self.element_to_action_index[x]] = True
+                masked_elements[self.element_to_action_index[x]] = True
         # (2/4) Bond 0 Charge FILLED
         elif (state[0] == 0) and (state[5] != 0):  # DONE
             # the charge in the state
@@ -595,7 +595,7 @@ class Atom(GFlowNetEnv):
                 if atom_charge not in bond_limit_map.keys()
             ]
             for x in invalid_elements:
-                valid_elements[self.element_to_action_index[x]] = True
+                masked_elements[self.element_to_action_index[x]] = True
         # (3/4) Bond FILLED Charge 0
         elif (state[0] != 0) and (state[5] == 0):  # NOT DONE
             # filter actions for some elements
@@ -614,12 +614,12 @@ class Atom(GFlowNetEnv):
             ]
             # loop through all the elements (Use a loop for now)
             for x in invalid_elements:
-                valid_elements[self.element_to_action_index[x]] = True
+                masked_elements[self.element_to_action_index[x]] = True
         # (4/4) Bond 0 Charge 0
         else:
             # no filter so use the default
             pass
-        return valid_elements
+        return masked_elements
 
     # TODO:
     def _get_valid_charges(self, state):
@@ -671,7 +671,7 @@ class Atom(GFlowNetEnv):
         # (4/4) Bond 0 Element 0
         else:  # DONE
             masked_charges = [
-                int(charge_i.replace("+", "")) not in self.all_charges
+                charge_i not in self.all_charges
                 for charge_i in self.action_map["charge"]
             ]
         return masked_charges
