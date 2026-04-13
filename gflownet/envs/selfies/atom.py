@@ -383,7 +383,7 @@ class Atom(GFlowNetEnv):
         # used for getting bond constraints of each element (charged or uncharged)
         # default constraint is 8
         self.element_to_bond_constraint = {
-            self.element_to_action_index[element]: bond_constraints.get(element, 8)
+            element: max(self.bond_constraints.get(element, {0: 8}).values())
             for element in self.action_map["element"]
         }
         # default constraint is 8
@@ -609,8 +609,8 @@ class Atom(GFlowNetEnv):
             invalid_elements = [
                 element
                 # elements are not in bond_constraints will never be filtered out
-                for element, bond_limit_map in self.bond_constraints.items()
-                if bond_limit_map[0] < bond_number
+                for element, bond_limit in self.element_to_bond_constraint.items()
+                if bond_limit < bond_number
             ]
             # loop through all the elements (Use a loop for now)
             for x in invalid_elements:
@@ -742,7 +742,6 @@ class Atom(GFlowNetEnv):
             + masked_charges
             + terminal_mask
         )
-
         return mask
 
     def get_parents(
@@ -977,14 +976,18 @@ class Atom(GFlowNetEnv):
                     ]
                 ):
                     terminating_states.append(list(state_tuple))
-            elif bool(self.element_to_bond_constraint[state_tuple[2] - 1]) and (
+            elif bool(
+                self.element_to_bond_constraint[state_tuple[2] - 1]
+            ) and (  # <<< keys here are wrong
                 state_tuple[0] != 0
             ):
                 # get the bond constraint
                 bond_string = self.action_map["bond"][state_tuple[0] - 1]
                 if (
                     self.bond_map[bond_string]
-                    <= self.element_to_bond_constraint[state_tuple[2] - 1]
+                    <= self.element_to_bond_constraint[
+                        state_tuple[2] - 1
+                    ]  # <<< keys here are wrong
                 ):
                     terminating_states.append(list(state_tuple))
             else:

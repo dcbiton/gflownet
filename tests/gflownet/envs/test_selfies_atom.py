@@ -266,6 +266,36 @@ def test__step__returns_expected(env_organic_single_charge, state, action, next_
         # Source state
         (
             "env_organic_charge4",
+            [0, 0, 5, 0, 0, 0], # <<< O
+            list(
+                {
+                    (1, 1): False,
+                    (1, 2): False,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["H"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["B"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["C"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["N"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["O"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["F"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["P"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["S"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["Cl"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["Br"]): True,
+                    (3, DEFAULT_ORGANIC_ELEMENTS["I"]): True,
+                    (6, 1): True,
+                    (6, 2): True,
+                    (6, 3): True,
+                    (6, 4): False,
+                    (6, 5): False,
+                    (6, 6): True,
+                    (6, 7): True,
+                    (6, 8): True,
+                    (-1, -1): False,
+                }.values()
+            ),
+        ),  
+        (
+            "env_organic_charge4",
             [2, 0, 0, 0, 0, 0],
             list(
                 {
