@@ -241,15 +241,6 @@ class Atom(GFlowNetEnv):
 
     Attributes
     ----------
-    options : iterable
-        The description of the options as an iterable of strings. These strings are
-        used as readable representation. By default, the string <source> is reserved
-        for the source state.
-    n_options : int
-        The number of options.
-    options_available : tuple
-        A tuple of option indices (starting from 1) corresponding to the subset of
-        options that is available for the environment instance.
     source_readable : str
         The string to be used to represent the source state as a human-readable string.
     elements : list or int
@@ -448,8 +439,41 @@ class Atom(GFlowNetEnv):
                 for action_value in range(len(self.action_map[action_type]))
             ]
         action_space += [self.eos]
-
         return action_space
+
+    def _is_eos_valid(self, state: List[int]) -> bool:
+        """
+        Checks if the state is valid
+        By looking at state
+        and looking at if the bonds and charges of the elements are valid
+        """
+        if not self._is_element_set(state):
+            return False
+        else:
+            # check the element, bond, and state
+            # check using the bond constraints
+            element = self.action_map["element"][state[2] - 1]
+            if self._is_charge_set(state):
+                # charge is set
+                atom_charge = int(
+                    self.action_map["charge"][state[5] - 1].replace("+", "")
+                )
+                # check if charge is in the allowed charges
+                if atom_charge not in self.allowed_charges[element]:
+                    # this should be caught but anyway return False
+                    return False
+            else:
+                # atom charge 0 is always allowed
+                atom_charge = 0
+            # then get the bond
+            if self._is_bond_set(state):
+                bond_number = self.bond_map[self.action_map["bond"][state[0] - 1]]
+                if bond_number <= self.bond_constraints[element][atom_charge]:
+                    return True
+                else:
+                    return False
+            else:
+                return True
 
     def _is_bond_set(self, state: List[int]) -> bool:
         """
@@ -730,6 +754,11 @@ class Atom(GFlowNetEnv):
             masked_charges = [True] * num_charges
         else:
             masked_charges = self._get_valid_charges(state=state)
+
+        if self._is_eos_valid(state):
+            terminal_mask = [False]
+        else:
+            terminal_mask = [True]
 
         # after checking everything,
         # combine lists to create a mask for the whole action space
