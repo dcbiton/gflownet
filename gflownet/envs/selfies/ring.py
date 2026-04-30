@@ -23,6 +23,7 @@ After 1-11(inc) then the EOS action will be valid
 
 """
 
+import re
 from typing import Iterable, List, Optional, Tuple
 
 import torch.nn.functional as F
@@ -320,7 +321,9 @@ class Ring(GFlowNetEnv):
         """
         n_states = len(states)
         states_policy = tlong(states, device=self.device)
-        states_policy = F.one_hot(states_policy, num_classes=7)
+        states_policy = F.one_hot(
+            states_policy, num_classes=1 + max(self.num_actions.values())
+        )
         return tfloat(
             states_policy.reshape(n_states, -1),
             float_type=self.float,
@@ -332,16 +335,24 @@ class Ring(GFlowNetEnv):
         Converts a human-readable string representing a state into a state as a list of
         positions.
         """
-        # get the branch
-        m = re.search(r"\[(.?)Ring(.?)\]", readable)
+        # get the ring
+        SELFIES_RING_PATTERN = re.compile(
+            r"^[\[]"  # opening square bracket [
+            r"([=#//\\\-]{0,2})"  # bond char
+            r"(Ring)"  # element symbol
+            r"(\d+)?"
+            r"[]]$"  # closing square bracket ]
+        )
+        # m = re.search(r"\[(.?)Ring(.?)\]", readable)
+        m = SELFIES_RING_PATTERN.match(readable)
         if m is None:
             return [0, 0]
-        bond, next_token = m.groups()
+        bond, _, next_token = m.groups()
         return [
             0 if bond == "" else 1 + self.action_map["bond"].index(bond),
             (
                 0
-                if next_token == ""
+                if next_token == None
                 else 1 + self.action_map["next_token"].index(next_token)
             ),
         ]
@@ -362,5 +373,4 @@ class Ring(GFlowNetEnv):
             "" if state[1] == 0 else self.action_map["next_token"][state[1] - 1]
         )
         readable_state = "[{}Ring{}]".format(bond_branch, next_token_branch)
-        print("STATE:", state, "READABLE:", readable_state)
         return readable_state
