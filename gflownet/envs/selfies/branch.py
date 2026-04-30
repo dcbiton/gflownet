@@ -28,25 +28,20 @@ from gflownet.utils.common import tfloat, tlong
 class Branch(GFlowNetEnv):
     """
     Branch environment for generating a branch SELFIES token
+    States are represented by a list of 2 elements, corresponding to 3 descriptors:
 
-    States are represented by a single-element list, indicating the index of the
-    selected option (starting from 1), or 0 if no option has been selected yet (source
-    state).
+    - Bond (1) [optional]
+    - Next token (2) [optional]
+        |-- Next token is needed by the branch to look at the next token included in the branch
+    When (2)nd element is not null, EOS action will be valid
 
-    The actions of the environment are single-element tuples indicating the index of
-    the option to be selected, or -1 for the EOS.
+    Actions are represented as tuples with two elements:
+
+    - Descriptor type: one of the three descriptors of states
+    - Value: the specific value of the descriptor
 
     Attributes
     ----------
-    options : iterable
-        The description of the options as an iterable of strings. These strings are
-        used as readable representation. By default, the string <source> is reserved
-        for the source state.
-    n_options : int
-        The number of options.
-    options_available : tuple
-        A tuple of option indices (starting from 1) corresponding to the subset of
-        options that is available for the environment instance.
     source_readable : str
         The string to be used to represent the source state as a human-readable string.
     """
@@ -66,9 +61,10 @@ class Branch(GFlowNetEnv):
             string. By default: <source>
         """
         self.source_readable = source_readable
-        # Source state: [bond, next_tokens], so the selfies will be [bond Branch next_tokens]
-        self.source = [0, 0]
+        # Source state: [bond, element, charge]
+        self.source = [0, 0, 0]
         # End-of-sequence action
+        # (action_type, action_value)
         self.eos = (-1, -1)
         # readable format for the branch environment, hard-code set-up
         self.branch_readable = self.state2readable(state=self.source)
@@ -98,15 +94,16 @@ class Branch(GFlowNetEnv):
         """
         Return all the possible actions for the branch including EOS.
 
-        Actions are represented by one element, starting from 1.
-        The actual element to action mapping is:
-        (1) Branch
-        (2) =Branch
-        (3) #Branch
-        (4) 1
-        (5) 2
-        (6) 3
-        The end of sequence action is (-1,).
+        Actions are represented by action = (action_type, action_value)
+        action types are:
+        (1) bond (=#)            [optional]
+        (2) next token       [optional]
+
+        The end of sequence action is (-1, -1).
+
+        for each action type:
+        (1) bond: = #
+        (2) next_token: 1 2 3
 
         Returns
         -------
@@ -123,8 +120,31 @@ class Branch(GFlowNetEnv):
                 for action_value in range(len(self.action_map[action_type]))
             ]
         action_space += [self.eos]
-
         return action_space
+
+    def _is_bond_set(self, state: List[int]) -> bool:
+        """
+        Checks if the bond is set
+        By looking at state[0]
+        If state[0] == 0 then there is no bond yet
+        else if state[0] != 0 then a bond was chosen
+        """
+        if state[0] != 0:
+            return True
+        else:
+            return False
+
+    def _is_next_token_set(self, state: List[int]) -> bool:
+        """
+        Checks if the next_token indicator is set
+        By looking at state[1]
+        If state[1] == 0 then there is no next_token yet
+        else if state[1] != 0 then next_token was chosen
+        """
+        if state[1] != 0:
+            return True
+        else:
+            return False
 
     def get_mask_invalid_actions_forward(
         self,
@@ -132,7 +152,7 @@ class Branch(GFlowNetEnv):
         done: Optional[bool] = None,
     ) -> List[bool]:
         """
-        Return which actions are invalid (True) and which are not invalid (False).
+        Returns which actions are invalid (True) and which are not invalid (False).
 
         Parameters
         ----------
@@ -148,32 +168,27 @@ class Branch(GFlowNetEnv):
         state = self._get_state(state)
         done = self._get_done(done)
 
-        # If done is True, all actions are invalid
-        if done:
-            mask = [True] * self.action_space_dim
-            return mask
+        num_bonds = self.num_actions["bond"]
+        num_next_token = self.num_actions["next_token"]
 
-        if self.is_source(state):
-            # If the state is the source state, all actions of available options are valid
-            # except EOS
-            mask = [False] * (self.action_space_dim - 1) + [False]
-            return mask
+        # for the mask, all are valid unless it is already set
+        if self._is_bond_set(state):
+            masked_bonds = [True] * num_bonds
+        else:
+            masked_bonds = [False] * num_bonds
 
-        # if parts of the state has a non-source/non-zero value,
-        # only EOS is valid
-        elif 0 not in state:
-            # all states are invalid except the EOS
-            mask = [True] * (self.action_space_dim - 1) + [False]
-            return mask
+        # Determine which elements are valid
+        if self._is_next_token_set(state):
+            masked_next_token = [True] * num_next_token
+            terminal_mask = [False]
+        else:
+            masked_next_token = [False] * num_next_token
+            terminal_mask = [True]
 
-        mask = [False] * (self.action_space_dim - 1) + [False]
-        for action_ind, action_type in enumerate(self.action_map):
-            if state[action_ind] != 0:
-                # if the state is already filled with an action_type,
-                # actions with that action_type is masked
-                mask_start = self.cummulative_count_actions[action_type]
-                mask_length = self.num_actions[action_type]
-                mask[mask_start : mask_start + mask_length] = [True] * mask_length
+        # after checking everything,
+        # combine lists to create a mask for the whole action space
+        mask = masked_bonds + masked_next_token + terminal_mask
+        return mask
 
     def get_parents(
         self,
@@ -339,36 +354,3 @@ class Branch(GFlowNetEnv):
         readable_state = "[{}Branch{}]".format(bond_branch, next_token_branch)
         print("STATE:", state, "READABLE:", readable_state)
         return readable_state
-
-    def get_all_terminating_states(self) -> List[List[int]]:
-        """
-        Returns a list with all the terminating states in environment format.
-
-        Returns
-        -------
-        list
-            The list of all terminating states.
-        """
-        terminating_states = [
-            [j, i]
-            for i in range(1, self.num_actions["next_token"])
-            for j in range(0, self.num_actions["bond"])
-        ]
-        return terminating_states
-
-    def get_uniform_terminating_states(
-        self, n_states: int, seed: int = None
-    ) -> List[List[int]]:
-        """
-        Constructs a batch of n states uniformly sampled in the sample space of the
-        environment.
-
-        Parameters
-        ----------
-        n_states : int
-            The number of states to sample.
-        seed : int
-            Random seed.
-        """
-        random.seed(seed)
-        return random.choices(self.get_all_terminating_states(), k=n_states)
