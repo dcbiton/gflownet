@@ -34,26 +34,20 @@ from gflownet.utils.common import tfloat, tlong
 
 class Ring(GFlowNetEnv):
     """
-    Ring environment for generating a branch SELFIES token
+    Ring environment for generating a ring SELFIES token
+    States are represented by a list of 2 elements, corresponding to 2 descriptors:
 
-    States are represented by a single-element list, indicating the index of the
-    selected option (starting from 1), or 0 if no option has been selected yet (source
-    state).
+    - Bond (1) [optional]
+    - Next token (2) [optional]
+        |-- Next token is needed by the ring to look at the next token included in the ring
+    When (2)nd element is not null, EOS action will be valid
 
-    The actions of the environment are single-element tuples indicating the index of
-    the option to be selected, or -1 for the EOS.
+    Actions are represented as tuples with two elements:
+    - Descriptor type: one of the two descriptors of states
+    - Value: the specific value of the descriptor
 
     Attributes
     ----------
-    options : iterable
-        The description of the options as an iterable of strings. These strings are
-        used as readable representation. By default, the string <source> is reserved
-        for the source state.
-    n_options : int
-        The number of options.
-    options_available : tuple
-        A tuple of option indices (starting from 1) corresponding to the subset of
-        options that is available for the environment instance.
     source_readable : str
         The string to be used to represent the source state as a human-readable string.
     """
@@ -74,61 +68,93 @@ class Ring(GFlowNetEnv):
         """
         self.source_readable = source_readable
         # Source state: [0]
-        self.source = []
+        # Source state: [bond, next_token]
+        self.source = [0, 0]
         # End-of-sequence action
-        self.eos = (-1,)
+        # (action_type, action_value)
+        self.eos = (-1, -1)
         # readable format for the branch environment, hard-code set-up
-        self.ring_readable = [
-            "Ring",
-            "=Ring",
-            "#Ring",
-            "-/Ring",
-            "-\\Ring",
-            "/-Ring",
-            "\\-Ring",
-            "//Ring",
-            "/\\Ring",
-            "//Ring",
-            "/\\Ring",
-            "1",
-            "2",
-            "3",
-        ]
-
-        # keep track of the state of the forward mask depending on the state
-        self.forward_mask = [False] * len(self.ring_readable) + [False]
+        self.branch_readable = self.state2readable(state=self.source)
+        # action map
+        self.action_map = {
+            "bond": ["=", "#", "-/", "-\\", "/-", "\\-", "//", "/\\"],
+            "next_token": ["1", "2", "3"],
+        }
+        # count the number of actions per action_type
+        # will be used later in masks
+        self.num_actions = {
+            action_type: len(self.action_map[action_type])
+            for action_type in self.action_map
+        }
+        # cummulative count will be used for masking later
+        self.cummulative_count_actions = {
+            action_type: sum(
+                [
+                    self.num_actions[action_type_iter]
+                    for i, action_type_iter in enumerate(self.num_actions)
+                    if i < j
+                ]
+            )
+            for j, action_type in enumerate(self.num_actions)
+        }
         # Base class init
         super().__init__(**kwargs)
 
     def get_action_space(self) -> List[Tuple]:
         """
-        returns all the possible actions for the branch including EOS.
+        Return all the possible actions for the branch including EOS.
 
-        Actions are represented by one element, starting from 1.
-        The actual element to action mapping is:
-        (1) Ring
-        (2) =Ring
-        (3) #Ring
-        (4) -/Ring
-        (5) -\\Ring
-        (6) /-Ring
-        (7) \\-Ring
-        (8) //Ring
-        (9) /\\Ring
-        (10) //Ring
-        (11) /\\Ring
-        (12) 1
-        (13) 2
-        (14) 3
-        The end of sequence action is (-1,).
+        Actions are represented by action = (action_type, action_value)
+        action types are:
+        (1) bond (= # -/ -\\ /- \\- // /\\)       [optional]
+        (2) next token                            [required]
+
+        The end of sequence action is (-1, -1).
+
+        for each action type:
+        (1) bond: = # -/ -\\ /- \\- // /\\
+        (2) next_token: 1 2 3
 
         Returns
         -------
         list
             A list of tuples representing the actions.
         """
-        action_space = [(el,) for el in range(1, 15)] + [self.eos]
+        action_space = []
+        for i, action_type in enumerate(self.action_map):
+            action_space += [
+                (
+                    i + 1,
+                    action_value + 1,
+                )
+                for action_value in range(len(self.action_map[action_type]))
+            ]
+        action_space += [self.eos]
         return action_space
+
+    def _is_bond_set(self, state: List[int]) -> bool:
+        """
+        Checks if the bond is set
+        By looking at state[0]
+        If state[0] == 0 then there is no bond yet
+        else if state[0] != 0 then a bond was chosen
+        """
+        if state[0] != 0:
+            return True
+        else:
+            return False
+
+    def _is_next_token_set(self, state: List[int]) -> bool:
+        """
+        Checks if the next_token indicator is set
+        By looking at state[1]
+        If state[1] == 0 then there is no next_token yet
+        else if state[1] != 0 then next_token was chosen
+        """
+        if state[1] != 0:
+            return True
+        else:
+            return False
 
     def get_mask_invalid_actions_forward(
         self,
@@ -152,27 +178,27 @@ class Ring(GFlowNetEnv):
         state = self._get_state(state)
         done = self._get_done(done)
 
-        # If done is True, return all invalid
-        if done:
-            return [True] * self.action_space_dim
+        num_bonds = self.num_actions["bond"]
+        num_next_token = self.num_actions["next_token"]
 
-        # If the state is the source state, all actions of available options are valid
-        # except EOS
-        print("STATE:", state)
-        if self.is_source(state):
-            return [False] * 14 + [True]
+        # for the mask, all are valid unless it is already set
+        if self._is_bond_set(state):
+            masked_bonds = [True] * num_bonds
+        else:
+            masked_bonds = [False] * num_bonds
 
-        elif len(state) == 2:
-            return [True] * 14 + [False]
-        elif state[0] <= 11:
-            # [1], [2], [3]
-            # if state contains the "Branch" word, then EOS can be valid
-            return [True] * 11 + [False] * 4
+        # Determine which elements are valid
+        if self._is_next_token_set(state):
+            masked_next_token = [True] * num_next_token
+            terminal_mask = [False]
+        else:
+            masked_next_token = [False] * num_next_token
+            terminal_mask = [True]
 
-        elif state[0] > 11:
-            # [4], [5], [6]
-            # if there is already a number, only the first three actions is valid
-            return [False] * 11 + [False] * 4
+        # after checking everything,
+        # combine lists to create a mask for the whole action space
+        mask = masked_bonds + masked_next_token + terminal_mask
+        return mask
 
     def get_parents(
         self,
@@ -181,7 +207,7 @@ class Ring(GFlowNetEnv):
         action: Optional[Tuple] = None,
     ) -> Tuple[List, List]:
         """
-        Determines all parents and actions that lead to state.
+        Determine all parents and actions that lead to state.
 
         There are many states:
             - Source state: no parents
@@ -205,19 +231,29 @@ class Ring(GFlowNetEnv):
         """
         state = self._get_state(state)
         done = self._get_done(done)
-        # THIS IS NOT DONE YET
         if done:
             return [state], [self.eos]
-        elif self.is_source(state):
+        if self.equal(state, self.source):
             return [], []
-        else:
-            return [state[:-1]], [(state[-1],)]
+
+        # container for the parents and action
+        parents = []
+        p_actions = []
+
+        # all the non-zero states are the number of actions
+        for i in range(len(state)):
+            if state[i] != 0:
+                parent = state.copy()
+                parent[i] = 0
+                parents.append(parent)
+                p_actions.append((i + 1, state[i]))
+        return parents, p_actions
 
     def step(
         self, action: Tuple[int, int], skip_mask_check: bool = False
     ) -> [List[int], Tuple[int], bool]:
         """
-        Executes step given an action.
+        Execute step given an action.
 
         Parameters
         ----------
@@ -254,7 +290,7 @@ class Ring(GFlowNetEnv):
             return self.state, action, valid
 
         # Update state: simply set the index indicated by the action
-        self.state.append(action[0])
+        self.state[action[0] - 1] = action[1]
         return self.state, action, valid
 
     def _get_max_trajectory_length(self) -> int:
@@ -296,9 +332,19 @@ class Ring(GFlowNetEnv):
         Converts a human-readable string representing a state into a state as a list of
         positions.
         """
-        if readable == self.source_readable:
-            return self.source
-        return [self.ring_readable.index(readable) + 1]
+        # get the branch
+        m = re.search(r"\[(.?)Ring(.?)\]", readable)
+        if m is None:
+            return [0, 0]
+        bond, next_token = m.groups()
+        return [
+            0 if bond == "" else 1 + self.action_map["bond"].index(bond),
+            (
+                0
+                if next_token == ""
+                else 1 + self.action_map["next_token"].index(next_token)
+            ),
+        ]
 
     def state2readable(self, state: Optional[List] = None, alphabet={}):
         """
@@ -308,40 +354,13 @@ class Ring(GFlowNetEnv):
         is the source state in which case ``self.source_readable`` is returned.
         """
         state = self._get_state(state)
-        state.sort()
         # if the state is the source, return source_readable
         if self.is_source(state):
             return self.source_readable
-        return (
-            "["
-            + "".join([str(self.ring_readable[idx - 1]) + "" for idx in state])
-            + "]"
+        bond_branch = "" if state[0] == 0 else self.action_map["bond"][state[0] - 1]
+        next_token_branch = (
+            "" if state[1] == 0 else self.action_map["next_token"][state[1] - 1]
         )
-
-    def get_all_terminating_states(self) -> List[List[int]]:
-        """
-        Returns a list with all the terminating states in environment format.
-
-        Returns
-        -------
-        list
-            The list of all terminating states.
-        """
-        return [[idx] for idx in range(1, 15)]
-
-    def get_uniform_terminating_states(
-        self, n_states: int, seed: int = None
-    ) -> List[List[int]]:
-        """
-        Constructs a batch of n states uniformly sampled in the sample space of the
-        environment.
-
-        Parameters
-        ----------
-        n_states : int
-            The number of states to sample.
-        seed : int
-            Random seed.
-        """
-        random.seed(seed)
-        return random.choices(self.get_all_terminating_states(), k=n_states)
+        readable_state = "[{}Ring{}]".format(bond_branch, next_token_branch)
+        print("STATE:", state, "READABLE:", readable_state)
+        return readable_state
