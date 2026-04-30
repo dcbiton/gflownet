@@ -296,7 +296,7 @@ class Branch(GFlowNetEnv):
 
     def states2policy(self, states: List) -> TensorType["batch", "policy_input_dim"]:
         """
-        Prepare a batch of states in "environment format" for the policy model: states
+        Prepares a batch of states in "environment format" for the policy model: states
         are one-hot encoded.
 
         Parameters
@@ -310,7 +310,9 @@ class Branch(GFlowNetEnv):
         """
         n_states = len(states)
         states_policy = tlong(states, device=self.device)
-        states_policy = F.one_hot(states_policy, num_classes=7)
+        states_policy = F.one_hot(
+            states_policy, num_classes=1 + max(self.num_actions.values())
+        )
         return tfloat(
             states_policy.reshape(n_states, -1),
             float_type=self.float,
