@@ -14,75 +14,208 @@ def test__environment_initializes_properly():
     assert True
 
 
+# states are the indices of the atoms
 @pytest.mark.parametrize(
     "action_space",
     [
         [
-            # fmt: off
-            (1,), (2,), (3,), (4,), (5,),(6,), (-1,)
-            # fmt: on
+            (1, 1),
+            (1, 2),
+            (2, 1),
+            (2, 2),
+            (2, 3),
+            (-1, -1),
         ],
     ],
 )
 def test__get_action_space__returns_expected(env, action_space):
-    a = env.get_action_space()
-    print(a)
-    print(env.action_space_dim)
     assert set(action_space) == set(env.action_space)
 
 
 @pytest.mark.parametrize(
-    "state, parents_expected, parents_a_expected",
+    "state, parents_exp, parent_actions_exp",
     [
         (
-            [5, 1],
-            [[5]],
-            [(1,)],
+            [1, 1],  # [=Branch1]
+            [[1, 0], [0, 1]],
+            [
+                (
+                    2,
+                    1,
+                ),
+                (
+                    1,
+                    1,
+                ),
+            ],
         ),
         (
-            [6],
-            [[]],
-            [(6,)],
+            [2, 1],  # [#Branch1]
+            [[2, 0], [0, 1]],
+            [
+                (
+                    2,
+                    1,
+                ),
+                (
+                    1,
+                    2,
+                ),
+            ],
         ),
         (
-            [1, 5],
-            [[1]],
-            [(5,)],
+            [1, 2],  # [=Branch2]
+            [[1, 0], [0, 2]],
+            [
+                (
+                    2,
+                    2,
+                ),
+                (
+                    1,
+                    1,
+                ),
+            ],
+        ),
+        (
+            [2, 2],  # [#Branch2]
+            [[2, 0], [0, 2]],
+            [
+                (
+                    2,
+                    2,
+                ),
+                (
+                    1,
+                    2,
+                ),
+            ],
+        ),
+        (
+            [1, 3],  # [=Branch3]
+            [[1, 0], [0, 3]],
+            [
+                (
+                    2,
+                    3,
+                ),
+                (
+                    1,
+                    1,
+                ),
+            ],
+        ),
+        (
+            [2, 3],  # [#Branch3]
+            [[2, 0], [0, 3]],
+            [
+                (
+                    2,
+                    3,
+                ),
+                (
+                    1,
+                    2,
+                ),
+            ],
+        ),
+        (
+            [0, 1],  # [Branch1]
+            [[0, 0]],
+            [
+                (
+                    2,
+                    1,
+                )
+            ],
+        ),
+        (
+            [0, 2],  # [Branch2]
+            [[0, 0]],
+            [
+                (
+                    2,
+                    2,
+                )
+            ],
+        ),
+        (
+            [0, 3],  # [Branch3]
+            [[0, 0]],
+            [
+                (
+                    2,
+                    3,
+                )
+            ],
+        ),
+        (
+            [1, 0],  # [=Branch]
+            [[0, 0]],
+            [
+                (
+                    1,
+                    1,
+                )
+            ],
+        ),
+        (
+            [2, 0],  # [#Branch]
+            [[0, 0]],
+            [
+                (
+                    1,
+                    2,
+                )
+            ],
         ),
     ],
 )
-def test__get_parents__returns_expected(
-    env, state, parents_expected, parents_a_expected
-):
-    parents, parents_a = env.get_parents(state)
-    for p, p_e in zip(parents, parents_expected):
-        assert p == p_e
-    for p_a, p_a_e in zip(parents_a, parents_a_expected):
-        assert p_a == p_a_e
+def test__get_parents__returns_expected(env, state, parents_exp, parent_actions_exp):
+    parents, parent_actions = env.get_parents(state)
+    # Create dictionaries of parent_action: parent for comparison
+    parents_actions_exp_dict = {}
+    for parent, action in zip(parents_exp, parent_actions_exp):
+        parents_actions_exp_dict[action] = tuple(parent.copy())
+    parents_actions_dict = {}
+    for parent, action in zip(parents, parent_actions):
+        parents_actions_dict[action] = tuple(parent.copy())
+    # Compare sorted dictionaries
+    assert sorted(parents_actions_exp_dict) == sorted(parents_actions_dict)
 
 
 @pytest.mark.parametrize(
     "state, action, next_state",
     [
         (
-            [],
-            (1,),
-            [1],
+            [2, 0],
+            (2, 1),
+            [2, 1],
         ),
         (
-            [1],
-            (3,),
-            [1],
+            [0, 0],
+            (2, 1),
+            [0, 1],
         ),
         (
-            [5],
-            (2,),
-            [5, 2],
+            [0, 2],
+            (1, 1),
+            [1, 2],
         ),
         (
-            [1],
-            (1,),
-            [1],
+            [0, 3],
+            (1, 1),
+            [1, 3],
+        ),
+        (
+            [0, 0],
+            (2, 3),
+            [0, 3],
+        ),
+        (
+            [0, 0],
+            (-1, -1),
+            [0, 0],
         ),
     ],
 )
@@ -92,30 +225,34 @@ def test__step__returns_expected(env, state, action, next_state):
     assert env.state == next_state
 
 
+# tests for masks
 @pytest.mark.parametrize(
-    "state, readable",
+    "state, mask_expected",
     [
-        ([0, 0, 0, 0, 0, 0, 0], ""),
-        ([3, 1, 20, 0, 0, 0, 0], "C A T"),
-        ([2, 9, 18, 4, 19, 0, 0], "B I R D S"),
-        ([13, 1, 3, 8, 9, 14, 5], "M A C H I N E"),
+        # Source state
+        (
+            [0, 0],
+            list(
+                {
+                    (1, 1): False,
+                    (1, 2): False,
+                    (2, 1): False,
+                    (2, 2): False,
+                    (2, 3): False,
+                    (-1, -1): True,
+                }.values()
+            ),
+        ),
     ],
 )
-def test__state2readable__returns_expected(env, state, readable):
-    assert env.state2readable(state) == readable
-
-
-@pytest.mark.parametrize(
-    "state, readable",
-    [
-        ([0, 0, 0, 0, 0, 0, 0], ""),
-        ([3, 1, 20, 0, 0, 0, 0], "C A T"),
-        ([2, 9, 18, 4, 19, 0, 0], "B I R D S"),
-        ([13, 1, 3, 8, 9, 14, 5], "M A C H I N E"),
-    ],
-)
-def test__readable2state__returns_expected(env, state, readable):
-    assert env.readable2state(readable) == state
+def test__get_mask_invalid_actions_forward__returns_expected(
+    env, state, mask_expected, request
+):
+    mask = env.get_mask_invalid_actions_forward(state, done=False)
+    assert mask == mask_expected
+    env.set_state(state)
+    mask = env.get_mask_invalid_actions_forward()
+    assert mask == mask_expected
 
 
 class TestBranchBasic(common.BaseTestsDiscrete):
