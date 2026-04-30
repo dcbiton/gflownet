@@ -28,7 +28,7 @@ from gflownet.utils.common import tfloat, tlong
 class Branch(GFlowNetEnv):
     """
     Branch environment for generating a branch SELFIES token
-    States are represented by a list of 2 elements, corresponding to 3 descriptors:
+    States are represented by a list of 2 elements, corresponding to 2 descriptors:
 
     - Bond (1) [optional]
     - Next token (2) [optional]
@@ -61,8 +61,8 @@ class Branch(GFlowNetEnv):
             string. By default: <source>
         """
         self.source_readable = source_readable
-        # Source state: [bond, element, charge]
-        self.source = [0, 0, 0]
+        # Source state: [bond, next_token]
+        self.source = [0, 0]
         # End-of-sequence action
         # (action_type, action_value)
         self.eos = (-1, -1)
@@ -97,7 +97,7 @@ class Branch(GFlowNetEnv):
         Actions are represented by action = (action_type, action_value)
         action types are:
         (1) bond (=#)            [optional]
-        (2) next token       [optional]
+        (2) next token           [required]
 
         The end of sequence action is (-1, -1).
 
