@@ -266,7 +266,7 @@ def test__step__returns_expected(env_organic_single_charge, state, action, next_
         # Source state
         (
             "env_organic_charge4",
-            [0, 0, 5, 0, 0, 0], # <<< O
+            [0, 0, 5, 0, 0, 0],  # <<< O
             list(
                 {
                     (1, 1): False,
@@ -293,7 +293,7 @@ def test__step__returns_expected(env_organic_single_charge, state, action, next_
                     (-1, -1): False,
                 }.values()
             ),
-        ),  
+        ),
         (
             "env_organic_charge4",
             [2, 0, 0, 0, 0, 0],
