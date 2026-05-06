@@ -1,0 +1,7 @@
+defaults:
+  - base
+
+_target_: gflownet.envs.selfies.ring.Ring
+
+id: selfies_ring
+source_readable: "<source>"
