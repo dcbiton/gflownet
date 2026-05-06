@@ -1,0 +1,7 @@
+defaults:
+  - base
+
+_target_: gflownet.envs.selfies.branch.Branch
+
+id: selfies_branch
+source_readable: "<source>"
