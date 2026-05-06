@@ -354,5 +354,4 @@ class Branch(GFlowNetEnv):
             "" if state[1] == 0 else self.action_map["next_token"][state[1] - 1]
         )
         readable_state = "[{}Branch{}]".format(bond_branch, next_token_branch)
-        print("STATE:", state, "READABLE:", readable_state)
         return readable_state
