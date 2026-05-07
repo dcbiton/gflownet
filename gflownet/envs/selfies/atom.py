@@ -49,8 +49,6 @@ actions will be: choose a:
 all charged elements are valid, only bond constraints are incorporated
 If the charged_element doesn't have a bond  constraint,
 then the bond constraint is 8
-This is implemented only for terminating states (TODO: should be implemented to masking as well)
-
 """
 
 import re
@@ -244,7 +242,7 @@ class Atom(GFlowNetEnv):
     source_readable : str
         The string to be used to represent the source state as a human-readable string.
     elements : list or int
-        Elements that will be used for construction of crystal. Either list, in
+        Elements that will be used for construction of token. Either list, in
         which case every value should indicate the atomic number of an element, or
         int, in which case n consecutive atomic numbers will be used. Note that we
         assume this will correspond to real atomic numbers, i.e. start from 1, not
@@ -268,6 +266,22 @@ class Atom(GFlowNetEnv):
     charge_limit: int
         Maximum charge possible for all elements
         from -charge_limit to +charge_limit
+    additional_bond_constraints: dict of dict
+        {element(str): {charge(int): max bond possible inclusive (int)}}
+        additional bond constraint for the elements, should be in a form of dictionary where the keys are the element and the value is another dictionary where the keys are the charge of the element and the value is the maximum possible bond that the element can accept
+        if format of the value is not followed, instantiation will give an error
+        additional_bond_constraint should follow the format of default_bond_constraint
+        additional_bond_constraint will be appended or will overwrite default_bond_constraint of the given element-charge
+        default bond constraint for any element-charge combination is 8
+        element-charge not specified in self.bond_constraint will receive the default bond constraint
+        if the main key element doesn't follow the string in element_map, the bond constraint will not be implemented in the atom environment but no errors will be given
+    additional_charges: dict of list
+        {element(str): [charges(int)]}
+        additional charges for the elements not included in the default_charges
+        all elements from the instantiation will have only [0] as the possible charge even those not specified in self.allowed_charges
+        charges already specified in default_charges cannot be removed (as for the reason that it is possible for the element to have that charge)
+        the only way to change is to change the whole self.allowed_charges after instantiation
+        if charges needs to be masked, change the bond_constraint using additional_bond_contraints
 
     """
 
@@ -312,6 +326,10 @@ class Atom(GFlowNetEnv):
                 raise ValueError(
                     f'Provided elements must be list, int, or str("organic", "all")'
                 )
+        if len(self.elements) == 0:
+            raise ValueError(
+                f"elements cannot be empty or should be the atomic symbol in the periodic table"
+            )
         # here, we process the additional allowed charges
         # (note that all elements can be uncharged)
         self.allowed_charges = default_charges
@@ -326,7 +344,7 @@ class Atom(GFlowNetEnv):
             for element, charges in additional_bond_constraints.items():
                 self.bond_constraints.setdefault(element, {}).update(charges)
         self.source_readable = source_readable
-        # Source state: [bond, isotope, element, chiral_tag, H_count, charge]
+        # Source state: [bond, isotope_number   , element, chiral_tag, H_count, charge]
         self.source = [0, 0, 0, 0, 0, 0]
         # End-of-sequence action
         self.eos = (
@@ -389,7 +407,6 @@ class Atom(GFlowNetEnv):
         self.max_bond_limit = max(
             max(bond_limits.values()) for bond_limits in self.bond_constraints.values()
         )
-
         self.all_charges = list(
             set(
                 charge_i
