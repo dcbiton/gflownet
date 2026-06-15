@@ -332,7 +332,15 @@ class Proxy(ABC):
                 Proxy._power(**kwargs),
                 lambda x: torch.log(Proxy._power(**kwargs)(x)),
             )
-
+        elif reward_function.lower().startswith("aff_exp"):
+            # alpha * exp(beta * x) + m
+            return lambda x: Proxy._shift(beta=kwargs["m"])(
+                    Proxy._exponential(alpha=kwargs["alpha"], beta=kwargs["beta"])(x)
+                ), lambda x: torch.log(
+                    Proxy._shift(beta=kwargs["m"])(
+                        Proxy._exponential(alpha=kwargs["alpha"], beta=kwargs["beta"])(x)
+                    )
+                )
         elif reward_function.startswith("exp") or reward_function == "boltzmann":
             return Proxy._exponential(**kwargs), lambda x: torch.log(
                 kwargs["alpha"]
@@ -372,6 +380,7 @@ class Proxy(ABC):
                     )
                 ),
             )
+
 
         else:
             raise ValueError(
