@@ -1,8 +1,9 @@
 """Class to represent SMILES molecules."""
 
-from typing import List, Union
+from typing import List, Optional, Union
 
 import numpy as np
+import torch
 from torchtyping import TensorType
 
 from gflownet.envs.sequences.base import SequenceBase
@@ -67,3 +68,29 @@ class Smiles(SequenceBase):
             "".join(self.idx2token[idx] for idx in self._unpad(state))
             for state in states
         ]
+
+    def state2readable(
+        self, state: Optional[TensorType["max_length"]] = None  # noqa: F821
+    ) -> str:
+        """
+        Convert a state into a human-readable string.
+
+        Example, with max_length = 5:
+          - state: [1, 2, 1, 1, 0]
+          - readable: "0 1 0 0"
+
+        The output string contains the token corresponding to each index in the state,
+        separated by spaces.
+
+        Parameters
+        ----------
+        states : tensor
+            A state in environment format. If None, self.state is used.
+
+        Returns
+        -------
+        A string of space-separated tokens.
+        """
+        state = self._get_state(state)
+        state = self._unpad(state.tolist() if torch.is_tensor(state) else state)
+        return "".join([str(self.idx2token[idx]) for idx in state])[:-1]
