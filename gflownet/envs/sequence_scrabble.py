@@ -33,6 +33,4 @@ class SequenceScrabble(Sequence):
         ]
 
         # Initialize base Stack environment
-        super().__init__(subenvs=tuple(subenvs), **kwargs)
-
-
+        super().__init__(envs_unique=tuple(subenvs), subenvs=tuple(subenvs), **kwargs)
