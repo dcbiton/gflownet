@@ -820,9 +820,12 @@ class Sequence(CompositeBase):
         temperature_logits: Optional[float] = 1.0,
     ) -> List[Tuple]:
         """Samples a batch of actions from a batch of policy outputs."""
-        is_active = torch.any(mask[:, : self._prefix_dim], axis=1)
+        is_active = torch.any(
+            mask[:, : self._prefix_dim], axis=1
+        )  # One True if sub-env active
         is_meta = torch.logical_not(is_active)
 
+        # Sample actions states that are active at meta-level
         actions_meta = []
         if torch.any(is_meta):
             actions_meta = super().sample_actions_batch(
@@ -834,18 +837,21 @@ class Sequence(CompositeBase):
                 temperature_logits,
             )
 
+        # Extract column idx of one-hot encoding = unique env idx
         indices_active = torch.where(mask[is_active, : self._prefix_dim])[1]
         if len(indices_active) == 0:
             return actions_meta
 
+        # Organize states with an active sub-env by unique env type
         indices_unique_int = indices_active.tolist()
         states_active = [s for s, a in zip(states_from, is_active) if a]
         states_dict = {idx: [] for idx in range(self.n_unique_envs)}
         for state, idx_unique in zip(states_active, indices_unique_int):
-            key = self._seq_length(state) - 1
+            key = self._seq_length(state) - 1  # Active sub-env is last one
             states_dict[idx_unique].append(self._get_substate(state, key))
         indices_unique = tlong(indices_unique_int, device=self.device)
 
+        # Sample actions for states where a sub-env is active
         actions_dict = {}
         for idx in range(self.n_unique_envs):
             env_mask = indices_unique == idx
@@ -862,11 +868,14 @@ class Sequence(CompositeBase):
                 random_action_prob,
                 temperature_logits,
             )
+
+        # Assemble actions in "active sub-env state" batch order
         actions_active = [
             self._pad_action(actions_dict[idx].pop(0), idx)
             for idx in indices_unique_int
         ]
 
+        # Assemble meta + active sub-env state actions in original batch order
         actions = []
         for a in is_active:
             if a:
@@ -891,6 +900,7 @@ class Sequence(CompositeBase):
         is_active = torch.any(mask[:, : self._prefix_dim], axis=1)
         is_meta = torch.logical_not(is_active)
 
+        # Get log-probs for states active at meta-level
         if torch.any(is_meta):
             logprobs[is_meta] = super().get_logprobs(
                 self._get_policy_outputs_of_meta_actions(policy_outputs[is_meta]),
@@ -900,10 +910,12 @@ class Sequence(CompositeBase):
                 is_backward,
             )
 
+        # Extract unique env idx for states active at sub-env level
         indices_active = torch.where(mask[is_active, : self._prefix_dim])[1]
         if len(indices_active) == 0:
             return logprobs
 
+        # Organize states by unique sub-env idx
         indices_unique_int = indices_active.tolist()
         states_active = [s for s, a in zip(states_from, is_active) if a]
         states_dict = {idx: [] for idx in range(self.n_unique_envs)}
@@ -912,6 +924,7 @@ class Sequence(CompositeBase):
             states_dict[idx_unique].append(self._get_substate(state, key))
         indices_unique = tlong(indices_unique_int, device=self.device)
 
+        #
         logprobs_active = torch.empty(
             len(indices_active), dtype=self.float, device=self.device
         )
@@ -940,8 +953,11 @@ class Sequence(CompositeBase):
         self, states: List[Dict]
     ) -> TensorType["batch", "state_policy_dim"]:
         """
-        Policy representation. Concatenation of:
+        TODO: Policy representation is a big vector, could this be an issue?
+        Policy representation: [ active | remaining | dones | pos_type | substates ]
+        Concatenation of:
             - one-hot of the active flag (over {-1, 0, 1}),
+            TODO: Maybe remove bag type because it influences policy representation:
             - remaining bag counts per unique type (zeros in free-growth mode),
             - done flag per position (padded to max_elements),
             - one-hot of the unique type at each position (padded to max_elements),
@@ -1004,7 +1020,9 @@ class Sequence(CompositeBase):
             for key in state["_indices"]:
                 idx_unique = state["_envs_unique"][key]
                 substate = self._get_substate(state, key)
-                seq.append(self._get_env_unique(idx_unique).state2proxy(substate)[0])
+                seq.append(
+                    self._get_env_unique(idx_unique).state2proxy(substate)[0]
+                )  # [0] because of length-1 batch
             states_proxy.append(seq)
         return states_proxy
 
@@ -1021,7 +1039,7 @@ class Sequence(CompositeBase):
             subenv = self._get_env_unique(idx_unique)
             done_str = " | done" if state["_dones"][key] else ""
             body += (
-                f"{idx_unique}: "
+                f"{key} of type {idx_unique}: "
                 + subenv.state2readable(self._get_substate(state, key))
                 + done_str
                 + ";\n"
@@ -1048,7 +1066,7 @@ class Sequence(CompositeBase):
         for key, line in enumerate(lines[1:]):
             line = line.rstrip(";").strip()
             idx_unique_str, rest = line.split(":", 1)
-            idx_unique = int(idx_unique_str.strip())
+            idx_unique = int(idx_unique_str.split("of type")[1].strip())
             done = " | done" in rest
             if done:
                 rest = rest.replace(" | done", "")
@@ -1103,7 +1121,9 @@ class Sequence(CompositeBase):
     def action2representative(self, action: Tuple) -> Tuple:
         """Replaces the sub-environment part of an action by its representative."""
         idx_unique = action[0]
-        if idx_unique == -1:
+        if (
+            idx_unique == -1
+        ):  # No changes necessary for meta actions because they are discrete
             return action
         subenv = self._get_env_unique(idx_unique)
         action_subenv = self._depad_action(action, idx_unique)
@@ -1113,6 +1133,7 @@ class Sequence(CompositeBase):
     def _get_max_trajectory_length(self) -> int:
         """Upper bound on the trajectory length (including EOS)."""
         max_subenv_traj = max([env.max_traj_length for env in self.envs_unique])
+        # Max elements times (insert action + max actions in subenv) + global EOS
         return self.max_elements * (1 + max_subenv_traj) + 1
 
     def __eq__(self, other, ignored_keys: List[str] = []) -> bool:
