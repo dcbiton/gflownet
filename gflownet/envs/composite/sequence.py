@@ -774,6 +774,12 @@ class Sequence(CompositeBase):
             self.state["_indices"].remove(key)
             self.state["_active"] = -1
             self.n_actions += 1
+
+            # here insert other variations of the 1-step-backward-state that represents the same sequence
+            # merge states indicate if the states that can represent the same sequence will be enumerated
+            self.state = self._get_random_equivalent_sequence(
+                self.state, self.merge_states
+            )
             return self.state, action, True
 
         # Case 2: Sub-environment action
@@ -1272,11 +1278,19 @@ class Sequence(CompositeBase):
 
     def _get_random_equivalent_sequence(self, state, merge_states=False):
         """NOT DONE NOT YET IMPLEMENTED"""
+        # TODO make it flexible for a list of states then combine similar sequences
         if not merge_states:
             # return the original state
             return state
         else:
-            return state
+            # first get all the possible states
+            all_possible_states = self._enumerate_all_states_for_the_sequence(state)
+            # then choose among the possible states with uniform probability
+            # then choose a random state
+            chosen_state = all_possible_states[
+                np.random.choice(len(all_possible_states))
+            ]
+            return chosen_state
 
     def _enumerate_all_states_for_the_sequence(self, state):
         """DONE NOT TESTED
