@@ -629,12 +629,12 @@ class Sequence(CompositeBase):
                 parent["_dones"].pop()
                 parent["_indices"].remove(key)
                 parent["_active"] = -1
-                # after removing the recently active substate, we also get all the states that correspond to the parent 
+                # after removing the recently active substate, we also get all the states that correspond to the parent
                 if not self.merge_states:
                     parents = [parent]
                 else:
-                    parents = self._enumerate_all_states_for_the_sequence(state=parent) 
-                return parents, [self._pad_action((insert_id,), -1)]*len(parents)
+                    parents = self._enumerate_all_states_for_the_sequence(state=parent)
+                return parents, [self._pad_action((insert_id,), -1)] * len(parents)
 
             # 2b: Parent states are from the active sub-environment, meta state remains unchanged
             parents_subenv, parent_actions = subenv.get_parents(substate, False)
@@ -782,9 +782,10 @@ class Sequence(CompositeBase):
 
             # here insert other variations of the 1-step-backward-state that represents the same sequence
             # merge states indicate if the states that can represent the same sequence will be enumerated
-            # self.state = self._get_random_equivalent_sequence(
-            #     self.state, self.merge_states
-            # )
+            if self.merge_states:
+                self.state = self._get_random_equivalent_sequence(
+                    self.state, self.merge_states
+                )
             return self.state, action, True
 
         # Case 2: Sub-environment action
@@ -962,6 +963,21 @@ class Sequence(CompositeBase):
                 actions.append(actions_meta.pop(0))
         return actions
 
+    def _get_logprobs_of_same_sequences(
+        self,
+        states: List,
+    ) -> TensorType["n_set_states"]:
+        """
+        Follows the implementation of BaseSet
+        """
+        logprobs = torch.zeros(len(states), dtype=self.float, device=self.device)
+        for idx, state in enumerate(states):
+            n_unique = len(self._enumerate_all_states_for_the_sequence(state))
+            logprobs[idx] = -torch.log(
+                tfloat(n_unique, device=self.device, float_type=self.float)
+            )
+        return logprobs
+
     def get_logprobs(
         self,
         policy_outputs: TensorType["n_states", "policy_output_dim"],
@@ -987,6 +1003,23 @@ class Sequence(CompositeBase):
                 None,
                 is_backward,
             )
+
+            # here we also recompute probabilities for states representing equivalent sequences
+            if is_backward and self.merge_states:
+                eos_tensor = tfloat(self.eos, float_type=self.float, device=self.device)
+                # filter out eos actions
+                is_eos_state = torch.zeros_like(is_meta)
+                is_eos_state[is_meta] = torch.any(actions[is_meta] != eos_tensor, dim=1)
+                if torch.any(is_eos_state):
+                    # remove the eos actions
+                    states_stochastic = [
+                        s for s, f in zip(states_from, is_eos_state) if f
+                    ]
+                    # log(n) correction for multiple states of the parent of the same sequences
+                    # not sure yet if it is the parent that should be considered
+                    logprobs[is_eos_state] += self._get_logprobs_of_same_sequences(
+                        states_stochastic
+                    )
 
         # Extract unique env idx for states active at sub-env level
         indices_active = torch.where(mask[is_active, : self._prefix_dim])[1]
@@ -1312,7 +1345,7 @@ class Sequence(CompositeBase):
         all_representations = [[0, 1], [1, 0]]  # initialize
         # all_representations = [[0, 1]]  # initialize
         new_representations = []
-        for i in range(2,n_indices+1):
+        for i in range(2, n_indices + 1):
             for j in range(len(all_representations)):
                 # append infront
                 new_representations.append([indices[i]] + all_representations[j])
@@ -1325,9 +1358,15 @@ class Sequence(CompositeBase):
             new_state = copy(state)
             new_envs_unique = copy(state)["_envs_unique"]
             old_indices = copy(state)["_indices"]
-            for ind in range(n_indices+1):
-                new_state[new_representations[k][ind]] = copy(state)[old_indices[ind]] # this is not yet correct
-                new_envs_unique[new_representations[k][ind]] = copy(state)["_envs_unique"][old_indices[ind]] # this is correct
+            for ind in range(n_indices + 1):
+                new_state[new_representations[k][ind]] = copy(state)[
+                    old_indices[ind]
+                ]  # this is not yet correct
+                new_envs_unique[new_representations[k][ind]] = copy(state)[
+                    "_envs_unique"
+                ][
+                    old_indices[ind]
+                ]  # this is correct
             new_state["_indices"] = new_representations[k]
             new_state["_envs_unique"] = new_envs_unique
             new_state_representations.append(new_state)
