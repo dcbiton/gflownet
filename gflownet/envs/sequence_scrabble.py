@@ -27,9 +27,9 @@ class SequenceScrabble(Sequence):
 
         # Initialize list of subenvs:
         subenvs = [
-            Scrabble(letters=["D", "G", "O"]),
-            Scrabble(letters=["A", "C", "T"]),
-            Scrabble(letters=["F", "H", "I", "S"]),
+            Scrabble(letters=["D"], max_length=3),
+            Scrabble(letters=["A"], max_length=3),
+            Scrabble(letters=["F", "H"], max_length=3),
         ]
 
         # Initialize base Stack environment
