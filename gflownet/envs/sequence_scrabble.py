@@ -29,14 +29,14 @@ class SequenceScrabble(Sequence):
         subenvs = [
             Scrabble(letters=["D"], max_length=1),
             Scrabble(letters=["A"], max_length=1),
-            Scrabble(letters=["F"], max_length=2),
+            Scrabble(letters=["F"], max_length=1),
         ]
 
         # Initialize base Stack environment
         super().__init__(
             envs_unique=tuple(subenvs),
             merge_representations=True,
-            max_sequence_length=3,
+            max_sequence_length=4,
             **kwargs,
         )
 
