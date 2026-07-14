@@ -1355,6 +1355,7 @@ class Sequence(CompositeBase):
             all_representations = new_representations
         new_state_representations = []
         # then form the state based on the new_representaions
+        print("new representations:", new_representations)
         for k in range(len(new_representations)):
             new_state = copy(state)
             new_envs_unique = copy(state)["_envs_unique"]
