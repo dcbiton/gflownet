@@ -77,4 +77,11 @@ class SequenceScrabble(Sequence):
     def state2readable(self, state: Optional[Dict] = None) -> str:
         """Converts a state into a human-readable representation."""
         state = self._get_state(state)
-        return "".join([state[i] for i in state["_indices"].copy()])
+        indices_seq = state["_indices"]
+        body = ""
+        for key in indices_seq:
+            idx_unique = state["_envs_unique"][key]
+            # get the class of the subenv so that we can get the state2readable function
+            subenv = self._get_env_unique(idx_unique)
+            body += subenv.state2readable(self._get_substate(state, key))
+        return body
