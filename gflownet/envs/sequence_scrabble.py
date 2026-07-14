@@ -73,3 +73,8 @@ class SequenceScrabble(Sequence):
                     "be matched to one of the existing unique environments"
                 )
         return indices_unique
+
+    def state2readable(self, state: Optional[Dict] = None) -> str:
+        """Converts a state into a human-readable representation."""
+        state = self._get_state(state)
+        return "".join([state[i] for i in state["_indices"].copy()])
