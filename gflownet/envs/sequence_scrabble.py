@@ -83,5 +83,5 @@ class SequenceScrabble(Sequence):
             idx_unique = state["_envs_unique"][key]
             # get the class of the subenv so that we can get the state2readable function
             subenv = self._get_env_unique(idx_unique)
-            body += subenv.state2readable(self._get_substate(state, key))
+            body += str(subenv.state2readable(self._get_substate(state, key))).replace(" ", "")
         return body
