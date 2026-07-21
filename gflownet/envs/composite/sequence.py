@@ -1353,7 +1353,6 @@ class Sequence(CompositeBase):
                 new_representations.append([indices[i]] + all_representations[j])
                 # append at the back
                 new_representations.append(all_representations[j] + [indices[i]])
-                print(indices[i])
             all_representations = new_representations
         new_representations = all_representations
         new_state_representations = []
