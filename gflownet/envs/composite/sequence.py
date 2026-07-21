@@ -1360,7 +1360,7 @@ class Sequence(CompositeBase):
             new_state = copy(state)
             new_envs_unique = copy(state)["_envs_unique"]
             old_indices = copy(state)["_indices"]
-            for ind in range(n_indices):
+            for ind in range(len(new_representations[k])):
                 new_state[new_representations[k][ind]] = copy(state)[
                     old_indices[ind]
                 ]  # this is not yet correct
