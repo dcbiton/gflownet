@@ -1339,6 +1339,7 @@ class Sequence(CompositeBase):
         # representations are used with the condition that the next number can only be inserted in front or at the end
         # so the possible combinations will be 2^n-1 if n=number of elements in the sequence
         indices = state["_indices"]
+        indices = indices.sort()
         n_indices = len(indices)
         # enumerate all the possible index order
         if n_indices < 2:
@@ -1353,9 +1354,10 @@ class Sequence(CompositeBase):
                 # append at the back
                 new_representations.append(all_representations[j] + [indices[i]])
             all_representations = new_representations
+        new_representations = all_representations
         new_state_representations = []
         # then form the state based on the new_representaions
-        print("indices", indices, "new representations:", new_representations)
+        # print("indices", indices, "new representations:", new_representations)
         for k in range(len(new_representations)):
             new_state = copy(state)
             new_envs_unique = copy(state)["_envs_unique"]
