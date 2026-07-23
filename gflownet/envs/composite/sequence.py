@@ -1334,7 +1334,6 @@ class Sequence(CompositeBase):
         input: state dict
         output: list of states
         """
-        # print("DEBUGGING:", state)
         # here, we will use indices to arrange the possible representations of the state that will correspond to the same sequence
         # representations are used with the condition that the next number can only be inserted in front or at the end
         # so the possible combinations will be 2^n-1 if n=number of elements in the sequence
@@ -1357,7 +1356,6 @@ class Sequence(CompositeBase):
         new_representations = all_representations
         new_state_representations = []
         # then form the state based on the new_representaions
-        # print("indices", indices, "new representations:", new_representations)
         for k in range(len(new_representations)):
             new_state = copy(state)
             new_envs_unique = copy(state)["_envs_unique"]
