@@ -28,7 +28,7 @@ class SequenceScrabble(Sequence):
         # Initialize list of subenvs:
         subenvs = [
             Scrabble(letters=["D"], max_length=1),
-            Scrabble(letters=["A"], max_length=2),
+            Scrabble(letters=["A"], max_length=1),
             Scrabble(letters=["F"], max_length=1),
         ]
 
@@ -36,7 +36,7 @@ class SequenceScrabble(Sequence):
         super().__init__(
             envs_unique=tuple(subenvs),
             merge_representations=True,
-            max_sequence_length=5,
+            max_sequence_length=4,
             **kwargs,
         )
 
