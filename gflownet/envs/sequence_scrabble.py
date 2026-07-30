@@ -15,6 +15,42 @@ from gflownet.envs.scrabble import Scrabble
 from gflownet.utils.common import copy
 
 
+# HERE create 3 unique environments
+class ScrabbleD(Scrabble):
+    def __init__(
+        self
+    ):
+
+        super().__init__(
+            letters=["D"],
+            max_length=1
+        )
+
+class ScrabbleA(Scrabble):
+    def __init__(
+        self
+    ):
+
+        super().__init__(
+            letters=["A"],
+            max_length=2
+        )
+
+class ScrabbleF(Scrabble):
+    def __init__(
+        self
+    ):
+
+        super().__init__(
+            letters=["F"],
+            max_length=1
+        )
+
+
+
+
+
+# THIS IS THE COMPOSITE ENV
 class SequenceScrabble(Sequence):
     """
     Environment to test multiple scrabble
@@ -27,9 +63,9 @@ class SequenceScrabble(Sequence):
 
         # Initialize list of subenvs:
         subenvs = [
-            Scrabble(letters=["D"], max_length=1),
-            Scrabble(letters=["A"], max_length=2),
-            Scrabble(letters=["F"], max_length=1),
+            ScrabbleD(),
+            ScrabbleA(),
+            ScrabbleF(),
         ]
 
         # Initialize base Stack environment
