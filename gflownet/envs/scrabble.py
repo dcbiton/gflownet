@@ -139,8 +139,7 @@ class Scrabble(GFlowNetEnv):
             return [False for _ in range(self.action_space_dim)]
         # Otherwise, only EOS is valid
         mask = [True for _ in range(self.action_space_dim)]
-        ### EOS is not valid if the sequence is empty
-        # mask[self.action_space.index(self.eos)] = False
+        mask[self.action_space.index(self.eos)] = False
         return mask
 
     def get_parents(
