@@ -21,18 +21,84 @@ class ScrabbleD(Scrabble):
         kwargs.setdefault("letters", ["D"])
         kwargs.setdefault("max_length", 1)
         super().__init__(**kwargs)
+    
+    def state2readable(self, state: List[int] = None) -> str:
+        """
+        Converts a state into a human-readable string.
+
+        The output string contains the letter corresponding to each index in the state,
+        separated by spaces.
+
+        Args
+        ----
+        states : tensor
+            A state in environment format. If None, self.state is used.
+
+        Returns
+        -------
+        A string of space-separated letters.
+        """
+        if state == self.source: 
+            return "<FILL>"
+        state = self._get_state(state)
+        state = self._unpad(state)
+        return "".join([str(self.idx2token[idx]) + " " for idx in state])[:-1]
 
 class ScrabbleA(Scrabble):
     def __init__(self, **kwargs):
         kwargs.setdefault("letters", ["A"])
         kwargs.setdefault("max_length", 2)
         super().__init__(**kwargs)
+            
+    def state2readable(self, state: List[int] = None) -> str:
+        """
+        Converts a state into a human-readable string.
+
+        The output string contains the letter corresponding to each index in the state,
+        separated by spaces.
+
+        Args
+        ----
+        states : tensor
+            A state in environment format. If None, self.state is used.
+
+        Returns
+        -------
+        A string of space-separated letters.
+        """
+        if state == self.source: 
+            return "<FILL>"
+        state = self._get_state(state)
+        state = self._unpad(state)
+        return "".join([str(self.idx2token[idx]) + " " for idx in state])[:-1]
 
 class ScrabbleF(Scrabble):
     def __init__(self, **kwargs):
         kwargs.setdefault("letters", ["F"])
         kwargs.setdefault("max_length", 1)
         super().__init__(**kwargs)
+            
+    def state2readable(self, state: List[int] = None) -> str:
+        """
+        Converts a state into a human-readable string.
+
+        The output string contains the letter corresponding to each index in the state,
+        separated by spaces.
+
+        Args
+        ----
+        states : tensor
+            A state in environment format. If None, self.state is used.
+
+        Returns
+        -------
+        A string of space-separated letters.
+        """
+        if state == self.source: 
+            return "<FILL>"
+        state = self._get_state(state)
+        state = self._unpad(state)
+        return "".join([str(self.idx2token[idx]) + " " for idx in state])[:-1]
 
 
 
@@ -96,15 +162,15 @@ class SequenceScrabble(Sequence):
                 )
         return indices_unique
 
-    # def state2readable(self, state: Optional[Dict] = None) -> str:
-    #     """Converts a state into a human-readable representation."""
-    #     state = self._get_state(state)
-    #     indices_seq = state["_indices"]
-    #     body = ""
-    #     for key in indices_seq:
-    #         idx_unique = state["_envs_unique"][key]
-    #         # get the class of the subenv so that we can get the state2readable function
-    #         subenv = self._get_env_unique(idx_unique)
-    #         # this part is to remove spaces between the letters in the subenv, this is needed
-    #         body += str(subenv.state2readable(self._get_substate(state, key))).replace(" ", "")
-    #     return body
+    def state2readable(self, state: Optional[Dict] = None) -> str:
+        """Converts a state into a human-readable representation."""
+        state = self._get_state(state)
+        indices_seq = state["_indices"]
+        body = ""
+        for key in indices_seq:
+            idx_unique = state["_envs_unique"][key]
+            # get the class of the subenv so that we can get the state2readable function
+            subenv = self._get_env_unique(idx_unique)
+            # this part is to remove spaces between the letters in the subenv, this is needed
+            body += str(subenv.state2readable(self._get_substate(state, key))).replace(" ", "")
+        return body
