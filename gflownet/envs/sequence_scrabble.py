@@ -17,36 +17,22 @@ from gflownet.utils.common import copy
 
 # HERE create 3 unique environments
 class ScrabbleD(Scrabble):
-    def __init__(
-        self
-    ):
-
-        super().__init__(
-            letters=["D"],
-            max_length=1
-        )
+    def __init__(self, **kwargs):
+        kwargs.setdefault("letters", ["D"])
+        kwargs.setdefault("max_length", 1)
+        super().__init__(**kwargs)
 
 class ScrabbleA(Scrabble):
-    def __init__(
-        self
-    ):
-
-        super().__init__(
-            letters=["A"],
-            max_length=2
-        )
+    def __init__(self, **kwargs):
+        kwargs.setdefault("letters", ["A"])
+        kwargs.setdefault("max_length", 2)
+        super().__init__(**kwargs)
 
 class ScrabbleF(Scrabble):
-    def __init__(
-        self
-    ):
-
-        super().__init__(
-            letters=["F"],
-            max_length=1
-        )
-
-
+    def __init__(self, **kwargs):
+        kwargs.setdefault("letters", ["F"])
+        kwargs.setdefault("max_length", 1)
+        super().__init__(**kwargs)
 
 
 
