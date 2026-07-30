@@ -96,15 +96,15 @@ class SequenceScrabble(Sequence):
                 )
         return indices_unique
 
-    def state2readable(self, state: Optional[Dict] = None) -> str:
-        """Converts a state into a human-readable representation."""
-        state = self._get_state(state)
-        indices_seq = state["_indices"]
-        body = ""
-        for key in indices_seq:
-            idx_unique = state["_envs_unique"][key]
-            # get the class of the subenv so that we can get the state2readable function
-            subenv = self._get_env_unique(idx_unique)
-            # this part is to remove spaces between the letters in the subenv, this is needed
-            body += str(subenv.state2readable(self._get_substate(state, key))).replace(" ", "")
-        return body
+    # def state2readable(self, state: Optional[Dict] = None) -> str:
+    #     """Converts a state into a human-readable representation."""
+    #     state = self._get_state(state)
+    #     indices_seq = state["_indices"]
+    #     body = ""
+    #     for key in indices_seq:
+    #         idx_unique = state["_envs_unique"][key]
+    #         # get the class of the subenv so that we can get the state2readable function
+    #         subenv = self._get_env_unique(idx_unique)
+    #         # this part is to remove spaces between the letters in the subenv, this is needed
+    #         body += str(subenv.state2readable(self._get_substate(state, key))).replace(" ", "")
+    #     return body
