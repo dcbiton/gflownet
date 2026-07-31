@@ -123,8 +123,8 @@ class SequenceScrabble(Sequence):
         # Initialize base Stack environment
         super().__init__(
             envs_unique=tuple(subenvs),
-            merge_representations=True,
-            max_sequence_length=1,
+            merge_representations=False,
+            max_sequence_length=2,
             **kwargs,
         )
 
