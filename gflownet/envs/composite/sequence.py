@@ -1369,9 +1369,10 @@ class Sequence(CompositeBase):
         new_representations = all_representations
         length_of_representations = set([len(i) for i in new_representations])
         if len(length_of_representations) ==1:
-            print("CORRECT REPRESENTATIONS:", length_of_representations)
+            # print("CORRECT REPRESENTATIONS:", length_of_representations, indices)
+            None
         else: 
-            print("NEW REPRESENTATIONS:", new_representations)
+            print("NEW REPRESENTATIONS:", new_representations, indices)
         new_state_representations = []
         # then form the state based on the new_representaions
         for k in range(len(new_representations)):
