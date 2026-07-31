@@ -1017,6 +1017,8 @@ class Sequence(CompositeBase):
                     states_stochastic = [
                         s for s, f in zip(states_from, is_eos_state) if f
                     ]
+                    print("SELF STATE:", self.state)
+                    print("STATES STOCHASTIC:", states_stochastic)
                     # log(n) correction for multiple states of the parent of the same sequences
                     # not sure yet if it is the parent that should be considered
                     logprobs[is_eos_state] += self._get_logprobs_of_same_sequences(
