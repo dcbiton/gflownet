@@ -1268,8 +1268,7 @@ class Sequence(CompositeBase):
         **same sequence**
 
         orders the state into a list and compares the two states using
-    
-    gflownet.envs.base.GFlowNetEnv().equal()
+        gflownet.envs.base.GFlowNetEnv().equal()
 
         Parameters
         ----------
@@ -1344,7 +1343,6 @@ class Sequence(CompositeBase):
         # here, we will use indices to arrange the possible representations of the state that will correspond to the same sequence
         # representations are used with the condition that the next number can only be inserted in front or at the end
         # so the possible combinations will be 2^n-1 if n=number of elements in the sequence
-        print("STATE:", state)
         indices = state["_indices"]
         indices.sort()
         n_indices = len(indices)
@@ -1361,19 +1359,11 @@ class Sequence(CompositeBase):
                 # append at the back
                 new_representations.append(all_representations[j] + [indices[i]])
             all_representations = new_representations
-        
         # now we have all the representations from the permutation of other subenvs
         # but we didn't consider the case where
         # (1) 2 subenvs are the same
         # and (2) that multiple subenvs can be represented as a single subenv
         new_representations = all_representations
-        length_of_representations = set([len(i) for i in new_representations])
-        # if len(length_of_representations) ==1:
-        #     print("CORRECT REPRESENTATIONS:", length_of_representations, indices)
-        #     None
-        # else: 
-        #     print("NEW REPRESENTATIONS:", new_representations, indices)
-        print("NEW REPRESENTATIONS:", new_representations, indices)
         new_state_representations = []
         # then form the state based on the new_representaions
         for k in range(len(new_representations)):
