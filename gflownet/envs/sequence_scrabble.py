@@ -124,7 +124,7 @@ class SequenceScrabble(Sequence):
         super().__init__(
             envs_unique=tuple(subenvs),
             merge_representations=True,
-            max_sequence_length=3,
+            max_sequence_length=4,
             **kwargs,
         )
 

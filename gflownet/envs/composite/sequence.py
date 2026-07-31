@@ -1344,6 +1344,7 @@ class Sequence(CompositeBase):
         # here, we will use indices to arrange the possible representations of the state that will correspond to the same sequence
         # representations are used with the condition that the next number can only be inserted in front or at the end
         # so the possible combinations will be 2^n-1 if n=number of elements in the sequence
+        print("STATE")
         indices = state["_indices"]
         indices.sort()
         n_indices = len(indices)
