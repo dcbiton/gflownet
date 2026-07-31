@@ -1366,7 +1366,7 @@ class Sequence(CompositeBase):
         # but we didn't consider the case where
         # (1) 2 subenvs are the same
         # and (2) that multiple subenvs can be represented as a single subenv
-        # new_representations = all_representations
+        new_representations = all_representations
         length_of_representations = set([len(i) for i in new_representations])
         if len(length_of_representations) ==1:
             print("CORRECT REPRESENTATIONS:", length_of_representations)
