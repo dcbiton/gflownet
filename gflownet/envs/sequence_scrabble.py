@@ -39,7 +39,7 @@ class ScrabbleD(Scrabble):
         A string of space-separated letters.
         """
         if state == self.source: 
-            return "<FILL>"
+            return "<SOURCE_D>"
         state = self._get_state(state)
         state = self._unpad(state)
         return "".join([str(self.idx2token[idx]) + " " for idx in state])[:-1]
@@ -67,7 +67,7 @@ class ScrabbleA(Scrabble):
         A string of space-separated letters.
         """
         if state == self.source: 
-            return "<FILL>"
+            return "<SOURCE_A>"
         state = self._get_state(state)
         state = self._unpad(state)
         return "".join([str(self.idx2token[idx]) + " " for idx in state])[:-1]
@@ -95,7 +95,7 @@ class ScrabbleF(Scrabble):
         A string of space-separated letters.
         """
         if state == self.source: 
-            return "<FILL>"
+            return "<SOURCE_F>"
         state = self._get_state(state)
         state = self._unpad(state)
         return "".join([str(self.idx2token[idx]) + " " for idx in state])[:-1]
