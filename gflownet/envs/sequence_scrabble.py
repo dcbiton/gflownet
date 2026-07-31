@@ -47,7 +47,7 @@ class ScrabbleD(Scrabble):
 class ScrabbleA(Scrabble):
     def __init__(self, **kwargs):
         kwargs.setdefault("letters", ["A"])
-        kwargs.setdefault("max_length", 2)
+        kwargs.setdefault("max_length", 1)
         super().__init__(**kwargs)
             
     def state2readable(self, state: List[int] = None) -> str:
