@@ -1354,11 +1354,7 @@ class Sequence(CompositeBase):
         all_representations = [[0, 1], [1, 0]]  # initialize
         # all_representations = [[0, 1]]  # initialize
         for i in range(2, n_indices):
-<<<<<<< HEAD
-            # new_representations = []
-=======
             new_representations = []
->>>>>>> create_sequence_class_dev
             for j in range(len(all_representations)):
                 # append infront
                 new_representations.append([indices[i]] + all_representations[j])
