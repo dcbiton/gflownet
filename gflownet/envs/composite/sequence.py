@@ -1010,16 +1010,21 @@ class Sequence(CompositeBase):
             if is_backward and self.merge_states:
                 eos_tensor = tfloat(self.eos, float_type=self.float, device=self.device)
                 # filter out eos actions
-                is_eos_state = torch.zeros_like(is_meta)
-                is_eos_state[is_meta] = torch.any(actions[is_meta] != eos_tensor, dim=1)
-                if torch.any(is_eos_state):
-                    # remove the eos actions
-                    states_stochastic = [
-                        s for s, f in zip(states_from, is_eos_state) if f
-                    ]
+                is_stochastic = torch.zeros_like(is_meta)
+                is_stochastic[is_meta] = torch.any(actions[is_meta] != eos_tensor, dim=1)
+                # Copy part of setbase
+                states_stochastic = []
+                for idx, (state, iss) in enumerate(zip(states_from, is_stochastic)):
+                    if not iss:
+                        continue
+                    if self._get_active_subenv(state) == -1:
+                        states_stochastic.append(state)
+                    else:
+                        is_stochastic[idx] = False
+                if torch.any(is_stochastic):
                     # log(n) correction for multiple states of the parent of the same sequences
                     # not sure yet if it is the parent that should be considered
-                    logprobs[is_eos_state] += self._get_logprobs_of_same_sequences(
+                    logprobs[is_stochastic[is_meta]] += self._get_logprobs_of_same_sequences(
                         states_stochastic
                     )
 
