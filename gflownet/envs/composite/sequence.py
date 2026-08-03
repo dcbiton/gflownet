@@ -972,7 +972,9 @@ class Sequence(CompositeBase):
         """
         logprobs = torch.zeros(len(states), dtype=self.float, device=self.device)
         for idx, state in enumerate(states):
-            n_unique = len(self._enumerate_all_states_for_the_sequence(state))
+            # n_unique = len(self._enumerate_all_states_for_the_sequence(state))
+            n_indices = len(copy(state)["_indices"])
+            n_unique = 2**(n_indices-1)
             logprobs[idx] = -torch.log(
                 tfloat(n_unique, device=self.device, float_type=self.float)
             )
@@ -1015,13 +1017,10 @@ class Sequence(CompositeBase):
                     states_stochastic = [
                         s for s, f in zip(states_from, is_eos_state) if f
                     ]
-                    print("SUM IS EOS STATE", torch.sum(is_eos_state))
-                    print("SUM IS META:", torch.sum(is_meta))
-                    print("LEN STATES STOCHASTIC:", len(states_stochastic))
                     # log(n) correction for multiple states of the parent of the same sequences
                     # not sure yet if it is the parent that should be considered
-                    logprobs[is_eos_state[is_meta]] += self._get_logprobs_of_same_sequences(
-                        states_stochastic[is_meta]
+                    logprobs[is_eos_state] += self._get_logprobs_of_same_sequences(
+                        states_stochastic
                     )
 
         # Extract unique env idx for states active at sub-env level
