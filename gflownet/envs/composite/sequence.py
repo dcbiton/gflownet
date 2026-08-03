@@ -974,7 +974,7 @@ class Sequence(CompositeBase):
         for idx, state in enumerate(states):
             # n_unique = len(self._enumerate_all_states_for_the_sequence(state))
             n_indices = len(copy(state)["_indices"])
-            if n_indices < 2: 
+            if n_indices <= 2: 
                 n_unique = 1
             else:
                 n_unique = 2**(n_indices-2)
