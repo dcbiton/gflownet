@@ -1017,7 +1017,7 @@ class Sequence(CompositeBase):
                 for idx, (state, iss) in enumerate(zip(states_from, is_stochastic)):
                     if not iss:
                         continue
-                    if self._get_active_subenv(state) == -1:
+                    if state["_active"] == -1:
                         states_stochastic.append(state)
                     else:
                         is_stochastic[idx] = False
