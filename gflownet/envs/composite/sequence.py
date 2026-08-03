@@ -1013,18 +1013,14 @@ class Sequence(CompositeBase):
                 is_stochastic = torch.zeros_like(is_meta)
                 is_stochastic[is_meta] = torch.any(actions[is_meta] != eos_tensor, dim=1)
                 # Copy part of setbase
-                states_stochastic = []
-                for idx, (state, iss) in enumerate(zip(states_from, is_stochastic)):
-                    if not iss:
-                        continue
-                    if state["_active"] == -1:
-                        states_stochastic.append(state)
-                    else:
-                        is_stochastic[idx] = False
                 if torch.any(is_stochastic):
+                    # remove the eos actions
+                    states_stochastic = [
+                        s for s, f in zip(states_from, is_stochastic) if f
+                    ]
                     # log(n) correction for multiple states of the parent of the same sequences
                     # not sure yet if it is the parent that should be considered
-                    logprobs[is_stochastic[is_meta]] += self._get_logprobs_of_same_sequences(
+                    logprobs[is_stochastic] += self._get_logprobs_of_same_sequences(
                         states_stochastic
                     )
 
