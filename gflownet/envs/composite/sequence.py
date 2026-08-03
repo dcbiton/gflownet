@@ -974,7 +974,7 @@ class Sequence(CompositeBase):
         for idx, state in enumerate(states):
             # n_unique = len(self._enumerate_all_states_for_the_sequence(state))
             n_indices = len(copy(state)["_indices"])
-            n_unique = 10 + (2**(n_indices-1))
+            n_unique = 2**(n_indices-1)
             logprobs[idx] = -torch.log(
                 tfloat(n_unique, device=self.device, float_type=self.float)
             )
