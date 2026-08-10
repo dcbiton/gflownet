@@ -1010,22 +1010,22 @@ class Sequence(CompositeBase):
             )
 
             # here we also recompute probabilities for states representing equivalent sequences
-            if is_backward and self.merge_states:
-                eos_tensor = tfloat(self.eos, float_type=self.float, device=self.device)
-                # filter out eos actions
-                is_stochastic = torch.zeros_like(is_meta)
-                is_stochastic[is_meta] = torch.any(actions[is_meta] != eos_tensor, dim=1)
-                # Copy part of setbase
-                if torch.any(is_stochastic):
-                    # remove the eos actions
-                    states_stochastic = [
-                        s for s, f in zip(states_from, is_stochastic) if f
-                    ]
-                    # log(n) correction for multiple states of the parent of the same sequences
-                    # not sure yet if it is the parent that should be considered
-                    logprobs[is_stochastic] += self._get_logprobs_of_same_sequences(
-                        states_stochastic
-                    )
+            # if is_backward and self.merge_states:
+            #     eos_tensor = tfloat(self.eos, float_type=self.float, device=self.device)
+            #     # filter out eos actions
+            #     is_stochastic = torch.zeros_like(is_meta)
+            #     is_stochastic[is_meta] = torch.any(actions[is_meta] != eos_tensor, dim=1)
+            #     # Copy part of setbase
+            #     if torch.any(is_stochastic):
+            #         # remove the eos actions
+            #         states_stochastic = [
+            #             s for s, f in zip(states_from, is_stochastic) if f
+            #         ]
+            #         # log(n) correction for multiple states of the parent of the same sequences
+            #         # not sure yet if it is the parent that should be considered
+            #         logprobs[is_stochastic] += self._get_logprobs_of_same_sequences(
+            #             states_stochastic
+            #         )
 
         # Extract unique env idx for states active at sub-env level
         indices_active = torch.where(mask[is_active, : self._prefix_dim])[1]
