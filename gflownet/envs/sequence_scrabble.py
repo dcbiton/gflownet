@@ -126,7 +126,7 @@ class SequenceScrabble(Sequence):
             merge_representations=True,
             max_sequence_length=3,
             right_only=False,
-            left_only=False
+            left_only=False,
             **kwargs,
         )
 
