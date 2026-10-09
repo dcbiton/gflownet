@@ -197,7 +197,8 @@ class Sequence(CompositeBase):
         self._prefix_dim = self.n_unique_envs
 
         # Action dimensionality: the longest sub-environment EOS plus 1 (for the prefix)
-        self.action_dim = max([len(env.eos) for env in self.envs_unique]) + 1
+        # add 2 as the minimum olength since we need (prefix, env_id, direction, padding)
+        self.action_dim = max([2]+[len(env.eos) for env in self.envs_unique]) + 1
 
         # The global EOS is a tuple of -1's
         self.eos = (-1,) * self.action_dim
