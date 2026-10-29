@@ -1,0 +1,15 @@
+defaults:
+  - base
+
+_target_: gflownet.envs.selfies.atom.Atom
+
+id: selfies_atom
+elements: "organic"
+additional_charges: null
+additional_bond_constraints: null
+allow_chiral_tag: False
+allow_stereoisomer: False
+isotope_limit: 0
+h_count_limit: 0
+charge_limit: 4
+source_readable: "<source>"
