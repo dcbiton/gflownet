@@ -190,7 +190,8 @@ fi
 
 # Install rest of dependencies
 echo "Installing the rest of the dependencies, with extras " "$EXTRAS"
-python -m pip install .["$EXTRAS"]
+python -m pip install -e .["$EXTRAS"]
+python -m pip install selfies
 
 # Exit
 echo "Installation of gflownet package completed!"
