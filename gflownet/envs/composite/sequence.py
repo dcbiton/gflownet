@@ -868,7 +868,7 @@ class Sequence(CompositeBase):
                 return self.state, action, False
             self.n_actions += 1
             if action_subenv == subenv.eos:
-                #TODO add an action for the subenv EOS 
+                # TODO add an action for the subenv EOS
                 # when subenv is eos, the meta state goes from active to not active
                 # Toggle active env into inactive
                 # this action is needed in the backward direction but is deterministic (p = 1) going forwards
@@ -887,7 +887,7 @@ class Sequence(CompositeBase):
                 # 5) Test if other parts are broken
                 self._set_subdone(key, True)
                 # don't change the state anymore
-                # self.state["_active"] = _ACTIVE_NONE 
+                # self.state["_active"] = _ACTIVE_NONE
             else:
                 self._set_substate(key, subenv.state)
             return self.state, action, True
