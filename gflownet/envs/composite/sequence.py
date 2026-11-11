@@ -1364,6 +1364,8 @@ class Sequence(CompositeBase):
 
     def readable2state(self, readable: str) -> Dict:
         """Converts a human-readable representation into a state."""
+        if readable == "":
+            return self.source
         lines = [line for line in readable.split("\n") if line.strip() != ""]
         header = lines[0]
         parts = [p for p in header.split(";") if p.strip() != ""]
@@ -1451,8 +1453,8 @@ class Sequence(CompositeBase):
     def _get_max_trajectory_length(self) -> int:
         """Upper bound on the trajectory length (including EOS)."""
         max_subenv_traj = max([env.max_traj_length for env in self.envs_unique])
-        # Max elements times (insert action + max actions in subenv) + global EOS
-        return self.max_elements * (1 + max_subenv_traj) + 1
+        # Max elements times (max_subenv_traj + insert empty subenv + toggle) + global EOS
+        return self.max_elements * (2 + max_subenv_traj) + 1
 
     def __eq__(self, other, ignored_keys: List[str] = []) -> bool:
         """Equality between environment instances."""
@@ -1645,3 +1647,14 @@ class Sequence(CompositeBase):
             return new_state_representations
         else:
             return [state]
+
+    # here we make our own isclose which is used in common tests
+    def isclose(self, state_x, state_y, rtol=1e-5, atol=1e-8, do_equal=False) -> bool:
+        """
+        is close for sequence composite in general
+        Checks whether the two input states are close
+        uses the gfn>envs>base isclose function
+        """
+        if isinstance(state_x, dict) and isinstance(state_y, dict):
+            return self.equal(state_x, state_y)
+        return GFlowNetEnv.isclose(state_x, state_y, rtol, atol, do_equal)
