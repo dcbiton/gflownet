@@ -9,6 +9,19 @@ from gflownet.envs.composite.sequence import Sequence
 from gflownet.envs.scrabble import Scrabble
 from gflownet.utils.common import tlong
 
+# okay here let's make a scrabble without the spaces 
+class NonEmptyScrabble(Scrabble):
+    # redefine the masking
+    def get_mask_invalid_actions_forward(self, state=None, done=None):
+        mask = super().get_mask_invalid_actions_forward(state, done)
+        state = self._get_state(state)
+        done = self._get_done(done)
+        # so what we can do it just we can't EOS in an empty state 
+        if not done and state[0] == self.pad_idx: 
+            mask[self.action_space.index(self.eos)] = True
+        return mask
+    # don't modify any other things
+
 
 # Here we will use exactly the same scrabble but we can insert each letter left or right
 class SequenceScrabble(Sequence):
@@ -25,7 +38,7 @@ class SequenceScrabble(Sequence):
     ):
 
         # only one subenv lol with one letter each
-        subenvs = [Scrabble(max_length=1)]
+        subenvs = [NonEmptyScrabble(max_length=1)]
 
         # Initialize base Sequence environment
         # CHANGE THIS LATER!
@@ -47,6 +60,7 @@ class SequenceScrabble(Sequence):
         self.token2idx = letter_env.token2idx
         self.max_length = self.max_sequence_length  # word length
 
+
     def states2proxy(self, states: List[Dict]):
         # for the scrabble proxy
         out = []
@@ -57,10 +71,9 @@ class SequenceScrabble(Sequence):
         return tlong(out, device=self.device)
 
     def state2readable(self, state: Optional[Dict] = None) -> str:
-        """Converts a state into a human-readable representation."""
         state = self._get_state(state)
         letter_env = self._get_env_unique(0)
-        body = " ".join(
+        body = "".join(
             letter_env.state2readable(self._get_substate(state, key))
             for key in state["_indices"]
         )
@@ -81,10 +94,8 @@ class SequenceScrabble(Sequence):
         #     state["_indices"].append(key)
         #     state[key] = scrabble_env.readable2state(letter)
         # think about how to make it general
-        idx = (
-            [self.token2idx[t] for t in scrabble_word.split(" ")]
-            if scrabble_word
-            else []
-        )
-        state = idx + [self.pad_idx] * (self.max_length - len(idx))
-        return state
+        letters = scrabble_word.replace(" ", "").upper()
+        if len(letters) > self.max_length:
+            raise ValueError(f"Word longer than max_length: {scrabble_word}")
+        idx = [self.token2idx[t] for t in letters]
+        return idx + [self.pad_idx] * (self.max_length - len(idx))
